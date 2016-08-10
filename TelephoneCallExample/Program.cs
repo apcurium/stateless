@@ -28,22 +28,22 @@ namespace TelephoneCallExample
         {
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
             var toSleeperBerth = driverStateMachine.SetTriggerParameters<object>(Trigger.ToSleeperBerth);
-            var toOnDutyNotDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToOnDutyNotDriving);
+            var toOnDutyNotDriving = driverStateMachine.SetTriggerParameters<object, object>(Trigger.ToOnDutyNotDriving);
             var toOffDuty = driverStateMachine.SetTriggerParameters<object>(Trigger.ToOffDuty);
 
             driverStateMachine.Configure(State.OffDuty)
                 .OnEntryFrom(toOffDuty, OffDutyOnEntry)
                 .OnExit(OffDutyOnExit)
-                .PermitDynamic(toDriving, _ => State.Driving)
+                .PermitDynamic(toDriving, arg0 => State.Driving)
                 .PermitDynamic(toSleeperBerth, _ => State.SleeperBerth)
-                .PermitDynamic(toOnDutyNotDriving, _ => State.OnDutyNotDriving);
+                .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
             driverStateMachine.Configure(State.SleeperBerth)
                 .OnEntryFrom(toSleeperBerth, SleeperBerthgOnEntry)
                 .OnExit(SleeperBerthgOnExit)
                 .PermitDynamic(toDriving, _ => State.Driving)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
-                .PermitDynamic(toOnDutyNotDriving, _ => State.OnDutyNotDriving);
+                .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
             driverStateMachine.Configure(State.OnDutyNotDriving)
                 .OnEntryFrom(toOnDutyNotDriving, OnDutyNotDrivingOnEntry)
@@ -57,26 +57,28 @@ namespace TelephoneCallExample
                 .OnExit(DrivingOnExit)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
                 .PermitDynamic(toSleeperBerth, _ => State.SleeperBerth)
-                .PermitDynamic(toOnDutyNotDriving, _ => State.OnDutyNotDriving);
+                .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
 
-            Task.Run(() =>
+            var t1 = Task.Run(() =>
             {
-                Fire(driverStateMachine, Trigger.ToDriving, 1);
+                Fire(driverStateMachine, Trigger.ToDriving);
                 Fire(driverStateMachine, Trigger.ToOffDuty, 2);
                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 3);
-                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 4);
-                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 5);
+                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 4, 5);
+                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 5, 7);
                 Fire(driverStateMachine, Trigger.ToDriving, 6);
             });
 
-            Task.Run(() =>
+            var t2 =Task.Run(() =>
             {
                 Fire(driverStateMachine, Trigger.ToOffDuty, 7);
                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
-                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10);
+                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
             });
+
+            Task.WhenAll(t1, t2).Wait();
 
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
@@ -87,14 +89,14 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnEntry {value}");
         }
 
-        static void DrivingOnExit()
+        static void DrivingOnExit(object value)
         {
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit");
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit  {value}");
         }
 
-        static void OnDutyNotDrivingOnEntry(object value)
+        static void OnDutyNotDrivingOnEntry(object value, object value2)
         {
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnEntry {value}");
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnEntry {value} {value2}");
         }
 
         static void OnDutyNotDrivingOnExit()
@@ -122,21 +124,66 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OffDutyOnExit");
         }
 
-        static void Fire<T>(StateMachine<State, Trigger> stateMachine, Trigger trigger, T value)
+        static void Fire(StateMachine<State, Trigger> stateMachine, Trigger trigger)
         {
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} Firing: {stateMachine.State} - {trigger} {value}");
+
             try
             {
-                if (stateMachine.CanFire(trigger))
-                {
-                    stateMachine.Fire(trigger, value);
-                }
+                stateMachine.Fire(trigger);
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} {ex.Message}");
+                
+       
+            }
+            catch (Exception ex)
+            {
+
+
             }
 
+        }
+
+        static void Fire<TArg0>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0)
+        {
+
+            try
+            {
+                stateMachine.Fire(trigger, arg0);
+            }
+            catch (Exception)
+            {
+
+
+            }
+        }
+
+        static void Fire<TArg0, TArg1>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1)
+        {
+
+            try
+            {
+                stateMachine.Fire(trigger, arg0, arg1);
+            }
+            catch (Exception ex)
+            {
+
+
+            }
+        }
+
+        static void Fire<TArg0, TArg1, TArg2>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1, TArg2 arg2)
+        {
+
+            try
+            {
+                stateMachine.Fire(trigger, arg0, arg1, arg2);
+            }
+            catch (Exception)
+            {
+
+
+            }
         }
 
         static void Print(StateMachine<State, Trigger> stateMachine)
