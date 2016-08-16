@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Stateless;
 
@@ -11,6 +12,8 @@ namespace TelephoneCallExample
         enum Trigger
         {
             ToDriving,
+            ToInnerDriving1,
+            ToInnerDriving2,
             ToSleeperBerth,
             ToOffDuty,
             ToOnDutyNotDriving,
@@ -19,6 +22,8 @@ namespace TelephoneCallExample
         enum State
         {
             Driving,
+            DrivingInner1,
+            DrivingInner2,
             SleeperBerth,
             OffDuty,
             OnDutyNotDriving
@@ -27,6 +32,8 @@ namespace TelephoneCallExample
         static void Main(string[] args)
         {
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
+            var toDrivingInner1 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving1);
+            var toDrivingInner2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving2);
             var toSleeperBerth = driverStateMachine.SetTriggerParameters<object>(Trigger.ToSleeperBerth);
             var toOnDutyNotDriving = driverStateMachine.SetTriggerParameters<object, object>(Trigger.ToOnDutyNotDriving);
             var toOffDuty = driverStateMachine.SetTriggerParameters<object>(Trigger.ToOffDuty);
@@ -55,14 +62,39 @@ namespace TelephoneCallExample
             driverStateMachine.Configure(State.Driving)
                 .OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
                 .OnExit(DrivingOnExit)
+                .PermitDynamic(toDrivingInner1, _ => State.DrivingInner1)
+                .PermitDynamic(toDrivingInner2, _ => State.DrivingInner2)
+                .PermitDynamic(toOffDuty, _ => State.OffDuty)
+                .PermitDynamic(toSleeperBerth, _ => State.SleeperBerth)
+                .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
+
+            driverStateMachine.Configure(State.DrivingInner1)
+                .OnEntryFrom(toDrivingInner1, DrivingInner1OnEntry, "DrivingInner1OnEntry")
+                .OnExit(DrivingInner1OnExit)
+                .SubstateOf(State.Driving)
+                .PermitDynamic(toOffDuty, _ => State.OffDuty)
+                .PermitDynamic(toSleeperBerth, _ => State.SleeperBerth)
+                .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
+
+            driverStateMachine.Configure(State.DrivingInner2)
+                .OnEntryFrom(toDrivingInner2, DrivingInner2OnEntry, "DrivingInner2OnEntry")
+                .OnExit(DrivingInner2OnExit)
+                .SubstateOf(State.Driving)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
                 .PermitDynamic(toSleeperBerth, _ => State.SleeperBerth)
                 .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
 
+            OffDutyOnEntry(null);
+            Fire(driverStateMachine, Trigger.ToDriving);
+
+            Console.WriteLine("done main");
+
             var t1 = Task.Run(() =>
             {
                 Fire(driverStateMachine, Trigger.ToDriving);
+                //Fire(driverStateMachine, Trigger.ToInnerDriving1);
+                //Fire(driverStateMachine, Trigger.ToInnerDriving2);
                 Fire(driverStateMachine, Trigger.ToOffDuty, 2);
                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 3);
                 Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 4, 5);
@@ -70,15 +102,15 @@ namespace TelephoneCallExample
                 Fire(driverStateMachine, Trigger.ToDriving, 6);
             });
 
-            var t2 =Task.Run(() =>
-            {
-                Fire(driverStateMachine, Trigger.ToOffDuty, 7);
-                Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
-                Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
-                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
-            });
+            //var t2 =Task.Run(() =>
+            //{
+            //    Fire(driverStateMachine, Trigger.ToOffDuty, 7);
+            //    Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
+            //    Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
+            //    Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
+            //});
 
-            Task.WhenAll(t1, t2).Wait();
+            Task.WhenAll(t1).Wait();
 
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
@@ -87,11 +119,35 @@ namespace TelephoneCallExample
         static void DrivingOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnEntry {value}");
+
+            Thread.Sleep(10000);
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DOOOOOOOONE");
+
         }
 
         static void DrivingOnExit(object value)
         {
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit  {value}");
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit");
+        }
+
+        static void DrivingInner1OnEntry(object value)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnEntry {value}");
+        }
+
+        static void DrivingInner2OnExit(object value)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnExit  {value}");
+        }
+
+        static void DrivingInner2OnEntry(object value)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnEntry {value}");
+        }
+
+        static void DrivingInner1OnExit(object value)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnExit  {value}");
         }
 
         static void OnDutyNotDrivingOnEntry(object value, object value2)
