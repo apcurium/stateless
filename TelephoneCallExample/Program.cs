@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Amp.Logging;
 using Stateless;
 
 namespace TelephoneCallExample
 {
     class Program
     {
-        static StateMachine<State, Trigger> driverStateMachine = new StateMachine<State, Trigger>(State.OffDuty);
+        static StateMachine<State, Trigger> driverStateMachine;
 
         enum Trigger
         {
@@ -31,6 +32,7 @@ namespace TelephoneCallExample
 
         static void Main(string[] args)
         {
+            driverStateMachine  = new StateMachine<State, Trigger>(State.OffDuty, LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
             var toDrivingInner1 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving1);
             var toDrivingInner2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving2);
@@ -85,22 +87,26 @@ namespace TelephoneCallExample
                 .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
 
+            driverStateMachine.Start();
+
             OffDutyOnEntry(null);
             Fire(driverStateMachine, Trigger.ToDriving);
+            Fire(driverStateMachine, Trigger.ToInnerDriving1);
+            Fire(driverStateMachine, Trigger.ToInnerDriving2);
 
             Console.WriteLine("done main");
 
-            var t1 = Task.Run(() =>
+            var t1 = Task.Factory.StartNew(() =>
             {
                 Fire(driverStateMachine, Trigger.ToDriving);
-                //Fire(driverStateMachine, Trigger.ToInnerDriving1);
-                //Fire(driverStateMachine, Trigger.ToInnerDriving2);
+                Fire(driverStateMachine, Trigger.ToInnerDriving1);
+                Fire(driverStateMachine, Trigger.ToInnerDriving2);
                 Fire(driverStateMachine, Trigger.ToOffDuty, 2);
                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 3);
                 Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 4, 5);
                 Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 5, 7);
                 Fire(driverStateMachine, Trigger.ToDriving, 6);
-            });
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current);
 
             //var t2 =Task.Run(() =>
             //{
@@ -112,15 +118,17 @@ namespace TelephoneCallExample
 
             Task.WhenAll(t1).Wait();
 
+
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
+            driverStateMachine.Stop();
         }
 
         static void DrivingOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnEntry {value}");
 
-            Thread.Sleep(10000);
+            Thread.Sleep(2000);
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DOOOOOOOONE");
 
         }

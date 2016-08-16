@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using Amp.Logging;
 
 namespace Stateless
 {
@@ -15,8 +19,12 @@ namespace Stateless
         readonly IDictionary<TTrigger, TriggerWithParameters> _triggerConfiguration = new Dictionary<TTrigger, TriggerWithParameters>();
         readonly Func<TState> _stateAccessor;
         readonly Action<TState> _stateMutator;
+        readonly ConcurrentQueue<QueuedTrigger> _concurrentEventQueue = new ConcurrentQueue<QueuedTrigger>();
+        readonly ILogger _logger;
+        readonly string _stateMachineName;
         Action<TState, TTrigger> _unhandledTriggerAction;
         event Action<Transition> _onTransitioned;
+        CancellationTokenSource _cancellationTokenSource;
 
         private class QueuedTrigger
         {
@@ -24,15 +32,14 @@ namespace Stateless
             public object[] Args { get; set; }
         }
 
-        readonly Queue<QueuedTrigger> _eventQueue = new Queue<QueuedTrigger>();
-        private bool _firing;
-
         /// <summary>
         /// Construct a state machine with external state storage.
         /// </summary>
+        /// <param name="logger">logger</param>
         /// <param name="stateAccessor">A function that will be called to read the current state value.</param>
         /// <param name="stateMutator">An action that will be called to write new state values.</param>
-        public StateMachine(Func<TState> stateAccessor, Action<TState> stateMutator) : this()
+        /// <param name="name">name</param>
+        public StateMachine(Func<TState> stateAccessor, Action<TState> stateMutator, ILogger logger = null, string name = null) : this(logger, name)
         {
             _stateAccessor = Enforce.ArgumentNotNull(stateAccessor, "stateAccessor");
             _stateMutator = Enforce.ArgumentNotNull(stateMutator, "stateMutator");
@@ -41,8 +48,10 @@ namespace Stateless
         /// <summary>
         /// Construct a state machine.
         /// </summary>
+        /// <param name="logger">logger</param>
         /// <param name="initialState">The initial state.</param>
-        public StateMachine(TState initialState) : this()
+        /// <param name="name">name</param>
+        public StateMachine(TState initialState, ILogger logger = null, string name = null) : this(logger, name)
         {
             var reference = new StateReference { State = initialState };
             _stateAccessor = () => reference.State;
@@ -52,10 +61,66 @@ namespace Stateless
         /// <summary>
         /// Default constuctor
         /// </summary>
-        StateMachine()
+        private StateMachine(ILogger logger = null, string name = null)
         {
+            _logger = logger;
             _unhandledTriggerAction = DefaultUnhandledTriggerAction;
-        }  
+            _stateMachineName = name ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Start statemachine asynchroniously
+        /// </summary>
+        public void Start()
+        {
+            if (_cancellationTokenSource != null)
+            {
+                _cancellationTokenSource.Dispose();
+                _cancellationTokenSource = null;
+            }
+
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            Task.Factory.StartNew(() =>
+            {
+                _logger?.Info($"State machine named [{_stateMachineName}] is started");
+                while (!_cancellationTokenSource.IsCancellationRequested)
+                {
+                    while (_concurrentEventQueue.Count != 0)
+                    {
+                        QueuedTrigger queuedEvent;
+                        if (_concurrentEventQueue.TryDequeue(out queuedEvent))
+                        {
+                            try
+                            {
+                                InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
+                            }
+                            catch (InvalidOperationException)
+                            {
+                                // do nothing
+                                _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
+                            }
+                            catch(Exception ex)
+                            {
+                                _logger?.Error(ex, "An unexpected error occurs");
+                                _cancellationTokenSource.Cancel();
+                                throw;
+                            }
+                        }
+                    }
+                }
+            }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current);
+
+        }
+
+        /// <summary>
+        /// Stop statemachine asynchroniously
+        /// </summary>
+        public void Stop()
+        {
+            _cancellationTokenSource.Cancel();
+            _logger?.Info($"State machine named [{_stateMachineName}] is stopped");
+        }
 
         /// <summary>
         /// The current state.
@@ -97,7 +162,7 @@ namespace Stateless
 
             if (!_stateConfiguration.TryGetValue(state, out result))
             {
-                result = new StateRepresentation(state);
+                result = new StateRepresentation(state, _logger);
                 _stateConfiguration.Add(state, result);
             }
 
@@ -242,23 +307,7 @@ namespace Stateless
         /// <param name="args">     A variable-length parameters list containing arguments. </param>
         void InternalFire(TTrigger trigger, params object[] args)
         {
-            _eventQueue.Enqueue(new QueuedTrigger{Trigger = trigger, Args = args});
-            if (_firing)
-                return;
-
-            try
-            {
-                _firing = true;
-                while (_eventQueue.Count != 0)
-                {
-                    var queuedEvent = _eventQueue.Dequeue();
-                    InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
-                }
-            }
-            finally
-            {
-                _firing = false;
-            }
+            _concurrentEventQueue.Enqueue(new QueuedTrigger{Trigger = trigger, Args = args});
         }
 
         void InternalFireOne(TTrigger trigger, params object[] args)

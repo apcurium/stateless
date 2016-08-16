@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 
 namespace Stateless
 {
@@ -213,6 +209,7 @@ namespace Stateless
             public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Action<TArg0> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
+                
                 return OnEntryFrom<TArg0>(
                     trigger,
                     (a0, t) => entryAction(a0),
