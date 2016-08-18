@@ -33,6 +33,9 @@ namespace TelephoneCallExample
         static void Main(string[] args)
         {
             driverStateMachine  = new StateMachine<State, Trigger>(State.OffDuty, LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
+
+            driverStateMachine.TriggerNotValidRaised += DriverStateMachine_TriggerNotValidRaised;
+
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
             var toDrivingInner1 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving1);
             var toDrivingInner2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving2);
@@ -62,7 +65,7 @@ namespace TelephoneCallExample
                 .PermitDynamic(toDriving, _ => State.Driving);
 
             driverStateMachine.Configure(State.Driving)
-                .OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
+                //.OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
                 .OnExit(DrivingOnExit)
                 .PermitDynamic(toDrivingInner1, _ => State.DrivingInner1)
                 .PermitDynamic(toDrivingInner2, _ => State.DrivingInner2)
@@ -87,7 +90,7 @@ namespace TelephoneCallExample
                 .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
 
-            driverStateMachine.Start();
+            driverStateMachine.Start(TaskScheduler.Default);
 
             OffDutyOnEntry(null);
             Fire(driverStateMachine, Trigger.ToDriving);
@@ -122,6 +125,11 @@ namespace TelephoneCallExample
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
             driverStateMachine.Stop();
+        }
+
+        private static void DriverStateMachine_TriggerNotValidRaised(object sender, TriggerNotValidEventArgs<Trigger, State> e)
+        {
+            Console.WriteLine($"CALLBACK [{e.CurrentState}] [{e.Trigger}]");
         }
 
         static void DrivingOnEntry(object value)

@@ -64,6 +64,7 @@
     <Compile Include="Transition.cs" />
     <Compile Include="TransitioningTriggerBehaviour.cs" />
     <Compile Include="TriggerBehaviour.cs" />
+    <Compile Include="TriggerNotValidEventArgs.cs" />
     <Compile Include="TriggerWithParameters.cs" />
     <Compile Include="ParameterConversionResources.Designer.cs">
       <DependentUpon>ParameterConversionResources.resx</DependentUpon>

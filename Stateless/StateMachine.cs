@@ -26,6 +26,8 @@ namespace Stateless
         event Action<Transition> _onTransitioned;
         CancellationTokenSource _cancellationTokenSource;
 
+        public event EventHandler<TriggerNotValidEventArgs<TTrigger, TState>> TriggerNotValidRaised; 
+
         private class QueuedTrigger
         {
             public TTrigger Trigger { get; set; }
@@ -71,7 +73,7 @@ namespace Stateless
         /// <summary>
         /// Start statemachine asynchroniously
         /// </summary>
-        public void Start()
+        public void Start(TaskScheduler taskScheduler)
         {
             if (_cancellationTokenSource != null)
             {
@@ -97,8 +99,9 @@ namespace Stateless
                             }
                             catch (InvalidOperationException)
                             {
-                                // do nothing
+                                // raise an event to informe
                                 _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
+                                TriggerNotValidRaised?.Invoke(this, new TriggerNotValidEventArgs<TTrigger, TState>(queuedEvent.Trigger, State));
                             }
                             catch(Exception ex)
                             {
@@ -109,7 +112,7 @@ namespace Stateless
                         }
                     }
                 }
-            }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current);
+            }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, taskScheduler);
 
         }
 
