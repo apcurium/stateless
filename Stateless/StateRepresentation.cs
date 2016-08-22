@@ -148,16 +148,16 @@ namespace Stateless
                                 objectToString += "[" + obj.ToString() + "]";
                             }
 
-                            _logger.Info($"[{action.ActionDescription}] values [{objectToString}]");
+                            _logger?.Info($"[{action.ActionDescription}] values [{objectToString}]");
                         }
                         else
                         {
-                            _logger.Info($"[{action.ActionDescription}] values [{entryArgs[0].ToString()}]");
+                            _logger?.Info($"[{action.ActionDescription}] values [{entryArgs[0].ToString()}]");
                         }
                     }
                     else
                     {
-                        _logger.Info($"[{action.ActionDescription}]");
+                        _logger?.Info($"[{action.ActionDescription}]");
                     }
 
                     action.Action(transition, entryArgs);
@@ -169,7 +169,7 @@ namespace Stateless
                 Enforce.ArgumentNotNull(transition, nameof(transition));
                 foreach (var action in _exitActions)
                 {
-                    _logger.Info($"[{action.ActionDescription}]");
+                    _logger?.Info($"[{action.ActionDescription}]");
                     action.Action(transition);
                 }
             }

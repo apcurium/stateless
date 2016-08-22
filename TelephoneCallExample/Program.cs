@@ -93,7 +93,7 @@ namespace TelephoneCallExample
             driverStateMachine.Start(TaskScheduler.Default);
 
             OffDutyOnEntry(null);
-            Fire(driverStateMachine, Trigger.ToDriving);
+            Fire(driverStateMachine, Trigger.ToOffDuty);
             Fire(driverStateMachine, Trigger.ToInnerDriving1);
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
 

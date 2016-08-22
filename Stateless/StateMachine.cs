@@ -97,7 +97,7 @@ namespace Stateless
                             {
                                 InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
                             }
-                            catch (InvalidOperationException)
+                            catch (InvalidTriggerException)
                             {
                                 // raise an event to informe
                                 _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
@@ -453,13 +453,13 @@ namespace Stateless
             TriggerBehaviour triggerBehaviour;
             if (representativeState.TryFindHandlerWithUnmetGuardCondition(trigger, out triggerBehaviour))
             {
-                throw new InvalidOperationException(
+                throw new InvalidTriggerException(
                     string.Format(
                         StateMachineResources.NoTransitionsUnmetGuardCondition,
                         trigger, state, triggerBehaviour.GuardDescription));
             }
 
-            throw new InvalidOperationException(
+            throw new InvalidTriggerException(
                 string.Format(
                     StateMachineResources.NoTransitionsPermitted,
                     trigger, state));
