@@ -3,11 +3,11 @@
 namespace Stateless
 {
     /// <summary>
-    /// TriggerNotValidEventArgs
+    /// TriggerExecutedEventArgs
     /// </summary>
     /// <typeparam name="TTrigger"></typeparam>
     /// <typeparam name="TState"></typeparam>
-    public class TriggerNotValidEventArgs<TTrigger, TState> : EventArgs
+    public class TriggerExecutedEventArgs<TTrigger, TState> : EventArgs
     {
         /// <summary>
         /// Trigger
@@ -22,22 +22,16 @@ namespace Stateless
         /// <summary>
         /// FireCounter
         /// </summary>
-        public Int64 FireCounter { get; }  
-
-        /// <summary>
-        /// Message
-        /// </summary>
-        public String Message { get; }
+        public Int64 FireCounter { get; }
 
         /// <summary>
         /// Constructor
         /// </summary>
-        public TriggerNotValidEventArgs(TTrigger trigger, TState currentState, Int64 fireCounter, string message = null)
+        public TriggerExecutedEventArgs(TTrigger trigger, TState currentState, Int64 fireCounter)
         {
             Trigger = trigger;
             CurrentState = currentState;
             FireCounter = fireCounter;
-            Message = message;
         }
     }
 }
