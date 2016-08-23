@@ -22,7 +22,6 @@ namespace Stateless
         readonly ConcurrentQueue<QueuedTrigger> _concurrentEventQueue = new ConcurrentQueue<QueuedTrigger>();
         readonly ILogger _logger;
         readonly string _stateMachineName;
-        readonly ManualResetEvent _waitObject = new ManualResetEvent(false);
 
         long _fireCounter;
         Action<TState, TTrigger> _unhandledTriggerAction;
@@ -120,7 +119,7 @@ namespace Stateless
                     }
 
                     // used to not be 100% CPU time consumer
-                    _waitObject.WaitOne(10);
+                    Task.Delay(50).RunSynchronously();
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, taskScheduler);
 
