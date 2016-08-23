@@ -17,9 +17,10 @@ namespace Stateless
     {
         readonly IDictionary<TState, StateRepresentation> _stateConfiguration = new Dictionary<TState, StateRepresentation>();
         readonly IDictionary<TTrigger, TriggerWithParameters> _triggerConfiguration = new Dictionary<TTrigger, TriggerWithParameters>();
+        readonly ConcurrentQueue<QueuedTrigger> _concurrentEventQueue = new ConcurrentQueue<QueuedTrigger>();
+        readonly Task _waitTask = new Task(async () => await Task.Delay(50));
         readonly Func<TState> _stateAccessor;
         readonly Action<TState> _stateMutator;
-        readonly ConcurrentQueue<QueuedTrigger> _concurrentEventQueue = new ConcurrentQueue<QueuedTrigger>();
         readonly ILogger _logger;
         readonly string _stateMachineName;
 
@@ -119,7 +120,7 @@ namespace Stateless
                     }
 
                     // used to not be 100% CPU time consumer
-                    Task.Delay(50).RunSynchronously();
+                    _waitTask.Wait();
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, taskScheduler);
 
