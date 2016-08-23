@@ -67,6 +67,7 @@
     <Compile Include="TriggerBehaviour.cs" />
     <Compile Include="TriggerExecutedEventArgs.cs" />
     <Compile Include="TriggerNotValidEventArgs.cs" />
+    <Compile Include="TriggerResultEventArgs.cs" />
     <Compile Include="TriggerWithParameters.cs" />
     <Compile Include="ParameterConversionResources.Designer.cs">
       <DependentUpon>ParameterConversionResources.resx</DependentUpon>

@@ -101,7 +101,7 @@ namespace Stateless
                         {
                             try
                             {
-                                InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
+                                InternalFireOne(queuedEvent.Trigger, queuedEvent.FireCounter, queuedEvent.Args);
                                 TriggerExecutedRaised?.Invoke(this, new TriggerExecutedEventArgs<TTrigger, TState>(queuedEvent.Trigger, State, queuedEvent.FireCounter));
                             }
                             catch (InvalidTriggerException)
@@ -325,7 +325,7 @@ namespace Stateless
             return _fireCounter;
         }
 
-        void InternalFireOne(TTrigger trigger, params object[] args)
+        void InternalFireOne(TTrigger trigger, long fireCounter, params object[] args)
         {
             TriggerWithParameters configuration;
             if (_triggerConfiguration.TryGetValue(trigger, out configuration))
@@ -354,7 +354,7 @@ namespace Stateless
                 if (onTransitioned != null)
                     onTransitioned(transition);
 
-                newRepresentation.Enter(transition, args);
+                newRepresentation.Enter(transition, fireCounter, args);
             }
         }
 

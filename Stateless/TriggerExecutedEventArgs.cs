@@ -25,13 +25,19 @@ namespace Stateless
         public Int64 FireCounter { get; }
 
         /// <summary>
+        /// Result
+        /// </summary>
+        public object Result { get; set; }
+
+        /// <summary>
         /// Constructor
         /// </summary>
-        public TriggerExecutedEventArgs(TTrigger trigger, TState currentState, Int64 fireCounter)
+        public TriggerExecutedEventArgs(TTrigger trigger, TState currentState, Int64 fireCounter, object result = null)
         {
             Trigger = trigger;
             CurrentState = currentState;
             FireCounter = fireCounter;
+            Result = result;
         }
     }
 }

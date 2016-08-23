@@ -10,16 +10,16 @@ namespace Stateless
         internal class EntryActionBehavior
         {
             readonly string _actionDescription;
-            readonly Action<Transition, object[]> _action;
+            readonly Func<Transition, object[], object> _func;
 
-            public EntryActionBehavior(Action<Transition, object[]> action, string actionDescription)
+            public EntryActionBehavior(Func<Transition, object[], object> func, string actionDescription)
             {
-                _action = action;
+                _func = func;
                 _actionDescription = Enforce.ArgumentNotNull(actionDescription, nameof(actionDescription));
             }
 
             internal string ActionDescription { get { return _actionDescription; } }
-            internal Action<Transition, object[]> Action  { get { return _action; } }
+            internal Func<Transition, object[], object> Func { get { return _func; } }
         }
     }
 }

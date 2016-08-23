@@ -52,7 +52,7 @@ namespace Stateless
                 lines.Insert(0, label);
             }
 
-            if (_stateConfiguration.Any(s => s.Value.EntryActions.Any() || s.Value.ExitActions.Any()))
+            if (_stateConfiguration.Any(s => s.Value.EntryAction != null || s.Value.ExitAction != null))
             {
                 lines.Add("node [shape=box];");
 
@@ -60,17 +60,10 @@ namespace Stateless
                 {
                     TState source = stateCfg.Key;
 
-                    foreach (var entryActionBehaviour in stateCfg.Value.EntryActions)
-                    {
-                        string line = string.Format(" {0} -> \"{1}\" [label=\"On Entry\" style=dotted];", source, entryActionBehaviour.ActionDescription);
-                        lines.Add(line);
-                    }
-
-                    foreach (var exitActionBehaviour in stateCfg.Value.ExitActions)
-                    {
-                        string line = string.Format(" {0} -> \"{1}\" [label=\"On Exit\" style=dotted];", source, exitActionBehaviour.ActionDescription);
-                        lines.Add(line);
-                    }
+                    lines.Add(string.Format(" {0} -> \"{1}\" [label=\"On Entry\" style=dotted];", source, stateCfg.Value.EntryAction.ActionDescription));
+                    
+                    lines.Add(string.Format(" {0} -> \"{1}\" [label=\"On Exit\" style=dotted];", source, stateCfg.Value.ExitAction.ActionDescription));
+                    
                 }
             }
 

@@ -13,15 +13,15 @@ namespace Stateless
             readonly TState _state;
             readonly ILogger _logger;
 
-            readonly IDictionary<TTrigger, ICollection<TriggerBehaviour>> _triggerBehaviours =
-                new Dictionary<TTrigger, ICollection<TriggerBehaviour>>();
-
+            readonly IDictionary<TTrigger, ICollection<TriggerBehaviour>> _triggerBehaviours = new Dictionary<TTrigger, ICollection<TriggerBehaviour>>();
             internal IDictionary<TTrigger, ICollection<TriggerBehaviour>> TriggerBehaviours { get { return _triggerBehaviours; } }
 
-            readonly ICollection<EntryActionBehavior> _entryActions = new List<EntryActionBehavior>();
-            internal ICollection<EntryActionBehavior> EntryActions { get { return _entryActions; } }
-            readonly ICollection<ExitActionBehavior> _exitActions = new List<ExitActionBehavior>();
-            internal ICollection<ExitActionBehavior> ExitActions { get { return _exitActions; } }
+            EntryActionBehavior _entryAction;
+            internal EntryActionBehavior EntryAction { get { return _entryAction; } }
+            ExitActionBehavior _exitAction;
+            internal ExitActionBehavior ExitAction { get { return _exitAction; } }
+
+            public event EventHandler<TriggerResultEventArgs> TriggerResultRaised;
 
             StateRepresentation _superstate; // null
 
@@ -71,48 +71,50 @@ namespace Stateless
                     (Superstate != null && Superstate.TryFindHandlerWithUnmetGuardCondition(trigger, out handler)));
             }
 
-            public void AddEntryAction(TTrigger trigger, Action<Transition, object[]> action, string entryActionDescription)
+            public void AddEntryAction(TTrigger trigger, Func<Transition, object[], object> func, string entryActionDescription)
             {
-                Enforce.ArgumentNotNull(action, nameof(action));
-                _entryActions.Add(
-                    new EntryActionBehavior((t, args) =>
+                Enforce.ArgumentNotNull(func, nameof(func));
+                _entryAction = new EntryActionBehavior((t, args) =>
                     {
                         if (t.Trigger.Equals(trigger))
-                            action(t, args);
+                            return func(t, args);
+
+                        return null;
                     },
-                    Enforce.ArgumentNotNull(entryActionDescription, nameof(entryActionDescription))));
+                    Enforce.ArgumentNotNull(entryActionDescription, nameof(entryActionDescription)));
             }
 
-            public void AddEntryAction(Action<Transition, object[]> action, string entryActionDescription)
+            public void AddEntryAction(Func<Transition, object[], object> func, string entryActionDescription)
             {
-                _entryActions.Add(
-                    new EntryActionBehavior(
-                        Enforce.ArgumentNotNull(action, nameof(action)),
-                        Enforce.ArgumentNotNull(entryActionDescription, nameof(entryActionDescription))));
+                _entryAction = new EntryActionBehavior(
+                        Enforce.ArgumentNotNull(func, nameof(func)),
+                        Enforce.ArgumentNotNull(entryActionDescription, nameof(entryActionDescription)));
             }
 
-            public void AddExitAction(Action<Transition> action, string exitActionDescription)
+            public void AddExitAction(Func<Transition, object> func, string exitActionDescription)
             {
-                _exitActions.Add(
-                    new ExitActionBehavior(
-                        Enforce.ArgumentNotNull(action, nameof(action)),
-                        Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription))));
+                _exitAction = new ExitActionBehavior(
+                        Enforce.ArgumentNotNull(func, nameof(func)),
+                        Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
             }
 
-            public void Enter(Transition transition, params object[] entryArgs)
+            public void Enter(Transition transition, long fireCounter, params object[] entryArgs)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
 
                 if (transition.IsReentry)
                 {
-                    ExecuteEntryActions(transition, entryArgs);
+                    var result = ExecuteEntryActions(transition, entryArgs);
+                    TriggerResultRaised?.Invoke(this, new TriggerResultEventArgs(fireCounter, result));
+
                 }
                 else if (!Includes(transition.Source))
                 {
                     if (_superstate != null)
-                        _superstate.Enter(transition, entryArgs);
+                        _superstate.Enter(transition, fireCounter, entryArgs);
 
-                    ExecuteEntryActions(transition, entryArgs);
+                    var result = ExecuteEntryActions(transition, entryArgs);
+                    TriggerResultRaised?.Invoke(this, new TriggerResultEventArgs(fireCounter, result));
                 }
             }
 
@@ -122,56 +124,62 @@ namespace Stateless
 
                 if (transition.IsReentry)
                 {
-                    ExecuteExitActions(transition);
+                    var result = ExecuteExitActions(transition);
                 }
                 else if (!Includes(transition.Destination))
                 {
-                    ExecuteExitActions(transition);
+                    var result = ExecuteExitActions(transition);
                     if (_superstate != null)
                         _superstate.Exit(transition);
                 }
             }
 
-            void ExecuteEntryActions(Transition transition, object[] entryArgs)
+            object ExecuteEntryActions(Transition transition, object[] entryArgs)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
                 Enforce.ArgumentNotNull(entryArgs, nameof(entryArgs));
-                foreach (var action in _entryActions)
+                
+                if(_entryAction == null)
                 {
-                    if (entryArgs != null)
-                    {
-                        if(entryArgs.Length != 1)
-                        {
-                            var objectToString = string.Empty;
-                            foreach (var obj in entryArgs)
-                            {
-                                objectToString += "[" + obj.ToString() + "]";
-                            }
+                    return null;
+                }
 
-                            _logger?.Info($"[{action.ActionDescription}] values [{objectToString}]");
-                        }
-                        else
+                if (entryArgs != null)
+                {
+                    if(entryArgs.Length != 1)
+                    {
+                        var objectToString = string.Empty;
+                        foreach (var obj in entryArgs)
                         {
-                            _logger?.Info($"[{action.ActionDescription}] values [{entryArgs[0].ToString()}]");
+                            objectToString += "[" + obj.ToString() + "]";
                         }
+
+                        _logger?.Info($"[{_entryAction.ActionDescription}] values [{objectToString}]");
                     }
                     else
                     {
-                        _logger?.Info($"[{action.ActionDescription}]");
+                        _logger?.Info($"[{_entryAction.ActionDescription}] values [{entryArgs[0].ToString()}]");
                     }
-
-                    action.Action(transition, entryArgs);
                 }
-            }
+                else
+                {
+                    _logger?.Info($"[{_entryAction.ActionDescription}]");
+                }
 
-            void ExecuteExitActions(Transition transition)
+                return _entryAction.Func(transition, entryArgs);
+            }           
+
+            object ExecuteExitActions(Transition transition)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
-                foreach (var action in _exitActions)
+
+                if (_exitAction == null)
                 {
-                    _logger?.Info($"[{action.ActionDescription}]");
-                    action.Action(transition);
+                    return null;
                 }
+
+                _logger?.Info($"[{_exitAction.ActionDescription}]");
+                return _exitAction.Func(transition);
             }
 
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)

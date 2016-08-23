@@ -138,7 +138,7 @@ namespace Stateless
             /// <param name="entryAction">Action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntry(Action entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntry(Func<object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntry(
@@ -153,7 +153,7 @@ namespace Stateless
             /// <param name="entryAction">Action to execute, providing details of the transition.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntry(Action<Transition> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntry(Func<Transition, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 _representation.AddEntryAction(
@@ -170,7 +170,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom(TTrigger trigger, Action entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom(TTrigger trigger, Func<object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntryFrom(
@@ -187,7 +187,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom(TTrigger trigger, Action<Transition> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom(TTrigger trigger, Func<Transition, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 _representation.AddEntryAction(
@@ -206,7 +206,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Action<TArg0> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 
@@ -225,7 +225,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Action<TArg0, Transition> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Transition, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 Enforce.ArgumentNotNull(trigger, nameof(trigger));
@@ -247,7 +247,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Action<TArg0, TArg1> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Func<TArg0, TArg1, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntryFrom<TArg0, TArg1>(
@@ -265,7 +265,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Action<TArg0, TArg1, Transition> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Func<TArg0, TArg1, Transition, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 Enforce.ArgumentNotNull(trigger, nameof(trigger));
@@ -286,7 +286,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Action<TArg0, TArg1, TArg2> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Func<TArg0, TArg1, TArg2, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntryFrom<TArg0, TArg1, TArg2>(
@@ -305,7 +305,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Action<TArg0, TArg1, TArg2, Transition> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Func<TArg0, TArg1, TArg2, Transition, object> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 Enforce.ArgumentNotNull(trigger, nameof(trigger));
@@ -323,7 +323,7 @@ namespace Stateless
             /// <param name="exitAction">Action to execute.</param>
             /// <param name="exitActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnExit(Action exitAction, string exitActionDescription = null)
+            public StateConfiguration OnExit(Func<object> exitAction, string exitActionDescription = null)
             {
                 Enforce.ArgumentNotNull(exitAction, nameof(exitAction));
                 return OnExit(
@@ -338,7 +338,7 @@ namespace Stateless
             /// <param name="exitAction">Action to execute, providing details of the transition.</param>
             /// <param name="exitActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnExit(Action<Transition> exitAction, string exitActionDescription = null)
+            public StateConfiguration OnExit(Func<Transition, object> exitAction, string exitActionDescription = null)
             {
                 Enforce.ArgumentNotNull(exitAction, nameof(exitAction));
                 _representation.AddExitAction(

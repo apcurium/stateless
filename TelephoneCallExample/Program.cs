@@ -65,7 +65,7 @@ namespace TelephoneCallExample
                 .PermitDynamic(toDriving, _ => State.Driving);
 
             driverStateMachine.Configure(State.Driving)
-                //.OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
+                .OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
                 .OnExit(DrivingOnExit)
                 .PermitDynamic(toDrivingInner1, _ => State.DrivingInner1)
                 .PermitDynamic(toDrivingInner2, _ => State.DrivingInner2)
@@ -132,68 +132,80 @@ namespace TelephoneCallExample
             Console.WriteLine($"CALLBACK [{e.CurrentState}] [{e.Trigger}]");
         }
 
-        static void DrivingOnEntry(object value)
+        static object DrivingOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnEntry {value}");
 
             Thread.Sleep(2000);
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DOOOOOOOONE");
+            return null;
 
         }
 
-        static void DrivingOnExit(object value)
+        static object DrivingOnExit(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit");
+            return null;
         }
 
-        static void DrivingInner1OnEntry(object value)
+        static object DrivingInner1OnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnEntry {value}");
+            return null;
         }
 
-        static void DrivingInner2OnExit(object value)
+        static object DrivingInner2OnExit(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnExit  {value}");
+            return null;
         }
 
-        static void DrivingInner2OnEntry(object value)
+        static object DrivingInner2OnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnEntry {value}");
+            return null;
         }
 
-        static void DrivingInner1OnExit(object value)
+        static object DrivingInner1OnExit(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnExit  {value}");
+            return null;
         }
 
-        static void OnDutyNotDrivingOnEntry(object value, object value2)
+        static object OnDutyNotDrivingOnEntry(object value, object value2)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnEntry {value} {value2}");
+            return null;
         }
 
-        static void OnDutyNotDrivingOnExit()
+        static object OnDutyNotDrivingOnExit()
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnExit");
+            return null;
         }
 
-        static void SleeperBerthgOnEntry(object value)
+        static object SleeperBerthgOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnEntry {value}");
+            return null;
         }
 
-        static void SleeperBerthgOnExit()
+        static object SleeperBerthgOnExit()
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnExit");
+            return null;
         }
 
-        static void OffDutyOnEntry(object value)
+        static object OffDutyOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OffDutyOnEntry {value}");
+            return null;
         }
 
-        static void OffDutyOnExit()
+        static object OffDutyOnExit()
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OffDutyOnExit");
+            return null;
         }
 
         static void Fire(StateMachine<State, Trigger> stateMachine, Trigger trigger)
