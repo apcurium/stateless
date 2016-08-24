@@ -120,7 +120,7 @@ namespace Stateless
                     }
 
                     // used to not be 100% CPU time consumer
-                    _waitTask.Wait();
+                    _waitTask.Wait(50);
                 }
             }, _cancellationTokenSource.Token, TaskCreationOptions.LongRunning, taskScheduler);
 
