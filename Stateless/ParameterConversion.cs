@@ -8,6 +8,9 @@ namespace Stateless
         {
             Enforce.ArgumentNotNull(args, "args");
 
+            if (args == null)
+                return null;
+
             if (args.Length <= index)
                 throw new ArgumentException(
                     string.Format(ParameterConversionResources.ArgOfTypeRequiredInPosition, argType, index));
@@ -28,6 +31,9 @@ namespace Stateless
 
         public static void Validate(object[] args, Type[] expected)
         {
+            if (args == null)
+                return;
+
             if (args.Length > expected.Length)
                 throw new ArgumentException(
                     string.Format(ParameterConversionResources.TooManyParameters, expected.Length, args.Length));

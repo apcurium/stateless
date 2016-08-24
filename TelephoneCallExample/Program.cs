@@ -32,7 +32,8 @@ namespace TelephoneCallExample
 
         static void Main(string[] args)
         {
-            driverStateMachine = new StateMachine<State, Trigger>(State.OffDuty, LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
+            //var lor = LoggerFactory.GetLogger<StateMachine<State, Trigger>>();
+            driverStateMachine = new StateMachine<State, Trigger>(State.OffDuty, null, "DRIVER");
 
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
             var toDrivingInner1 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving1);
@@ -195,8 +196,7 @@ namespace TelephoneCallExample
             }
             catch (InvalidOperationException ex)
             {
-
-
+                Console.WriteLine(ex.Message);
             }
             catch (Exception ex)
             {
@@ -213,7 +213,11 @@ namespace TelephoneCallExample
             {
                 stateMachine.Fire(trigger, arg0);
             }
-            catch (Exception)
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
             {
 
 
@@ -226,6 +230,10 @@ namespace TelephoneCallExample
             try
             {
                 stateMachine.Fire(trigger, arg0, arg1);
+            }
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
             }
             catch (Exception ex)
             {
@@ -241,7 +249,11 @@ namespace TelephoneCallExample
             {
                 stateMachine.Fire(trigger, arg0, arg1, arg2);
             }
-            catch (Exception)
+            catch (InvalidOperationException ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+            catch (Exception ex)
             {
 
 
