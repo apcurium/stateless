@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Amp.Logging;
 
 namespace Stateless
 {
@@ -17,13 +18,16 @@ namespace Stateless
         readonly Action<TState> _stateMutator;
         Action<TState, TTrigger> _unhandledTriggerAction;
         event Action<Transition> _onTransitioned;
+        string _stateMachineName;
+        ILogger _logger;
+
 
         /// <summary>
         /// Construct a state machine with external state storage.
         /// </summary>
         /// <param name="stateAccessor">A function that will be called to read the current state value.</param>
         /// <param name="stateMutator">An action that will be called to write new state values.</param>
-        public StateMachine(Func<TState> stateAccessor, Action<TState> stateMutator) : this()
+        public StateMachine(Func<TState> stateAccessor, Action<TState> stateMutator, ILogger logger = null, string name = null) : this(logger, name)
         {
             _stateAccessor = Enforce.ArgumentNotNull(stateAccessor, "stateAccessor");
             _stateMutator = Enforce.ArgumentNotNull(stateMutator, "stateMutator");
@@ -33,7 +37,7 @@ namespace Stateless
         /// Construct a state machine.
         /// </summary>
         /// <param name="initialState">The initial state.</param>
-        public StateMachine(TState initialState) : this()
+        public StateMachine(TState initialState, ILogger logger = null, string name = null) : this(logger, name)
         {
             var reference = new StateReference { State = initialState };
             _stateAccessor = () => reference.State;
@@ -43,10 +47,15 @@ namespace Stateless
         /// <summary>
         /// Default constuctor
         /// </summary>
-        StateMachine()
+        /// <summary>
+        /// Default constuctor
+        /// </summary>
+        private StateMachine(ILogger logger = null, string name = null)
         {
+            _logger = logger;
             _unhandledTriggerAction = DefaultUnhandledTriggerAction;
-        }  
+            _stateMachineName = name ?? string.Empty;
+        }
 
         /// <summary>
         /// The current state.

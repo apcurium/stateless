@@ -97,6 +97,12 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Stateless\StatelessNet45Profile259.csproj">
+      <Project>{DC4DD764-F902-4D2F-B175-37EB3A8F006D}</Project>
+      <Name>StatelessNet45Profile259</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
