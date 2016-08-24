@@ -97,7 +97,7 @@ namespace Stateless
 
             if (!_stateConfiguration.TryGetValue(state, out result))
             {
-                result = new StateRepresentation(state);
+                result = new StateRepresentation(state, _logger);
                 _stateConfiguration.Add(state, result);
             }
 

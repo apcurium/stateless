@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Amp.Logging;
 
 namespace Stateless
 {
@@ -10,6 +11,7 @@ namespace Stateless
         internal class StateRepresentation
         {
             readonly TState _state;
+            readonly ILogger _logger;
 
             readonly IDictionary<TTrigger, ICollection<TriggerBehaviour>> _triggerBehaviours =
                 new Dictionary<TTrigger, ICollection<TriggerBehaviour>>();
@@ -25,9 +27,10 @@ namespace Stateless
 
             readonly ICollection<StateRepresentation> _substates = new List<StateRepresentation>();
 
-            public StateRepresentation(TState state)
+            public StateRepresentation(TState state, ILogger logger = null)
             {
                 _state = state;
+                _logger = logger;
             }
 
             public bool CanHandle(TTrigger trigger)
@@ -41,7 +44,7 @@ namespace Stateless
                 return (TryFindLocalHandler(trigger, out handler, t => t.IsGuardConditionMet) ||
                     (Superstate != null && Superstate.TryFindHandler(trigger, out handler)));
             }
-            
+
             bool TryFindLocalHandler(TTrigger trigger, out TriggerBehaviour handler, params Func<TriggerBehaviour, bool>[] filters)
             {
                 ICollection<TriggerBehaviour> possible;
@@ -64,7 +67,7 @@ namespace Stateless
 
             public bool TryFindHandlerWithUnmetGuardCondition(TTrigger trigger, out TriggerBehaviour handler)
             {
-                return (TryFindLocalHandler(trigger, out handler, t => !t.IsGuardConditionMet) || 
+                return (TryFindLocalHandler(trigger, out handler, t => !t.IsGuardConditionMet) ||
                     (Superstate != null && Superstate.TryFindHandlerWithUnmetGuardCondition(trigger, out handler)));
             }
 
@@ -134,14 +137,41 @@ namespace Stateless
                 Enforce.ArgumentNotNull(transition, nameof(transition));
                 Enforce.ArgumentNotNull(entryArgs, nameof(entryArgs));
                 foreach (var action in _entryActions)
+                {
+                    if (entryArgs != null)
+                    {
+                        if (entryArgs.Length != 1)
+                        {
+                            var objectToString = string.Empty;
+                            foreach (var obj in entryArgs)
+                            {
+                                objectToString += "[" + obj.ToString() + "]";
+                            }
+
+                            _logger?.Info($"[{action.ActionDescription}] values [{objectToString}]");
+                        }
+                        else
+                        {
+                            _logger?.Info($"[{action.ActionDescription}] values [{entryArgs[0].ToString()}]");
+                        }
+                    }
+                    else
+                    {
+                        _logger?.Info($"[{action.ActionDescription}]");
+                    }
+
                     action.Action(transition, entryArgs);
+                }
             }
 
             void ExecuteExitActions(Transition transition)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
                 foreach (var action in _exitActions)
+                {
+                    _logger?.Info($"[{action.ActionDescription}]");
                     action.Action(transition);
+                }
             }
 
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)
