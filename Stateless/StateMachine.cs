@@ -25,7 +25,6 @@ namespace Stateless
         readonly string _stateMachineName;
         readonly ManualResetEvent _resultManualResetEvent = new ManualResetEvent(false);
 
-        long _fireCounter;
         Action<TState, TTrigger> _unhandledTriggerAction;
         event Action<Transition> _onTransitioned;
         CancellationTokenSource _cancellationTokenSource;
@@ -37,13 +36,11 @@ namespace Stateless
         
 
         public event EventHandler<TriggerNotValidEventArgs<TTrigger, TState>> TriggerNotValidRaised; 
-        public event EventHandler<TriggerExecutedEventArgs<TTrigger, TState>> TriggerExecutedRaised; 
 
         private class QueuedTrigger
         {
             public TTrigger Trigger { get; set; }
             public object[] Args { get; set; }
-            public long FireCounter { get; set; }
             public ManualResetEvent ManualResetEvent { get; set; }
         }
 
@@ -81,7 +78,6 @@ namespace Stateless
             _logger = logger;
             _unhandledTriggerAction = DefaultUnhandledTriggerAction;
             _stateMachineName = name ?? string.Empty;
-            _fireCounter = 0;
         }
 
         /// <summary>
@@ -121,21 +117,19 @@ namespace Stateless
                                 {
                                     _resultManualResetEvent.Reset();
                                 }
-                                ResultFromFire = InternalFireOne(queuedEvent.Trigger, queuedEvent.FireCounter, queuedEvent.Args);
+                                ResultFromFire = InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
                                 queuedEvent.ManualResetEvent?.Set();
 
                                 if (queuedEvent.ManualResetEvent != null)
                                 {
                                     _resultManualResetEvent.WaitOne();
                                 }
-
-                                TriggerExecutedRaised?.Invoke(this, new TriggerExecutedEventArgs<TTrigger, TState>(queuedEvent.Trigger, State, queuedEvent.FireCounter));
                             }
                             catch (InvalidTriggerException)
                             {
                                 // raise an event to informe
                                 _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
-                                TriggerNotValidRaised?.Invoke(this, new TriggerNotValidEventArgs<TTrigger, TState>(queuedEvent.Trigger, State, queuedEvent.FireCounter));
+                                TriggerNotValidRaised?.Invoke(this, new TriggerNotValidEventArgs<TTrigger, TState>(queuedEvent.Trigger, State));
                             }
                             catch(Exception ex)
                             {
@@ -227,11 +221,12 @@ namespace Stateless
         /// will be invoked.
         /// </summary>
         /// <param name="trigger">The trigger to fire.</param>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire(TTrigger trigger, ManualResetEvent manualResetEvent)
+        public void Fire(TTrigger trigger, ManualResetEvent manualResetEvent)
         {
-            return InternalFire(trigger, manualResetEvent, null);
+            InternalFire(trigger, manualResetEvent, null);
         }
 
         /// <summary>
@@ -241,12 +236,13 @@ namespace Stateless
         /// will be invoked.
         /// </summary>
         /// <param name="trigger">The trigger to fire.</param>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <param name="arg0">The first argument.</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire<TArg0>(TTrigger trigger, ManualResetEvent manualResetEvent, TArg0 arg0)
+        public void Fire<TArg0>(TTrigger trigger, ManualResetEvent manualResetEvent, TArg0 arg0)
         {
-            return InternalFire(trigger, manualResetEvent, arg0);
+            InternalFire(trigger, manualResetEvent, arg0);
         }
 
         /// <summary>
@@ -256,13 +252,14 @@ namespace Stateless
         /// will be invoked.
         /// </summary>
         /// <param name="trigger">The trigger to fire.</param>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <param name="arg0">The first argument.</param>
         /// <param name="arg1">The second argument.</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire<TArg0, TArg1>(TTrigger trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1)
+        public void Fire<TArg0, TArg1>(TTrigger trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1)
         {
-            return InternalFire(trigger, manualResetEvent, arg0, arg1);
+            InternalFire(trigger, manualResetEvent, arg0, arg1);
         }
 
         /// <summary>
@@ -272,14 +269,15 @@ namespace Stateless
         /// will be invoked.
         /// </summary>
         /// <param name="trigger">The trigger to fire.</param>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <param name="arg0">The first argument.</param>
         /// <param name="arg1">The second argument.</param>
         /// <param name="arg2">The third argument.</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire<TArg0, TArg1, TArg2>(TTrigger trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1, TArg2 arg2)
+        public void Fire<TArg0, TArg1, TArg2>(TTrigger trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1, TArg2 arg2)
         {
-            return InternalFire(trigger, manualResetEvent, arg0, arg1, arg2);
+            InternalFire(trigger, manualResetEvent, arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -290,13 +288,14 @@ namespace Stateless
         /// </summary>
         /// <typeparam name="TArg0">Type of the first trigger argument.</typeparam>
         /// <param name="trigger">The trigger to fire.</param>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <param name="arg0">The first argument.</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire<TArg0>(TriggerWithParameters<TArg0> trigger, ManualResetEvent manualResetEvent, TArg0 arg0)
+        public void Fire<TArg0>(TriggerWithParameters<TArg0> trigger, ManualResetEvent manualResetEvent, TArg0 arg0)
         {
             Enforce.ArgumentNotNull(trigger, "trigger");
-            return InternalFire(trigger.Trigger, manualResetEvent, arg0);
+            InternalFire(trigger.Trigger, manualResetEvent, arg0);
         }
 
         /// <summary>
@@ -307,15 +306,16 @@ namespace Stateless
         /// </summary>
         /// <typeparam name="TArg0">Type of the first trigger argument.</typeparam>
         /// <typeparam name="TArg1">Type of the second trigger argument.</typeparam>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <param name="arg0">The first argument.</param>
         /// <param name="arg1">The second argument.</param>
         /// <param name="trigger">The trigger to fire.</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1)
+        public void Fire<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1)
         {
             Enforce.ArgumentNotNull(trigger, "trigger");
-            return InternalFire(trigger.Trigger, manualResetEvent, arg0, arg1);
+            InternalFire(trigger.Trigger, manualResetEvent, arg0, arg1);
         }
 
         /// <summary>
@@ -327,16 +327,17 @@ namespace Stateless
         /// <typeparam name="TArg0">Type of the first trigger argument.</typeparam>
         /// <typeparam name="TArg1">Type of the second trigger argument.</typeparam>
         /// <typeparam name="TArg2">Type of the third trigger argument.</typeparam>
+        /// <param name="manualResetEvent">manualResetEvent</param>
         /// <param name="arg0">The first argument.</param>
         /// <param name="arg1">The second argument.</param>
         /// <param name="arg2">The third argument.</param>
         /// <param name="trigger">The trigger to fire.</param>
         /// <exception cref="System.InvalidOperationException">The current state does
         /// not allow the trigger to be fired.</exception>
-        public long Fire<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1, TArg2 arg2)
+        public void Fire<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, ManualResetEvent manualResetEvent, TArg0 arg0, TArg1 arg1, TArg2 arg2)
         {
             Enforce.ArgumentNotNull(trigger, "trigger");
-            return InternalFire(trigger.Trigger, manualResetEvent, arg0, arg1, arg2);
+            InternalFire(trigger.Trigger, manualResetEvent, arg0, arg1, arg2);
         }
 
         /// <summary>
@@ -346,23 +347,19 @@ namespace Stateless
         /// <param name="trigger">  The trigger. </param>
         /// <param name="manualResetEvent"></param>
         /// <param name="args">     A variable-length parameters list containing arguments. </param>
-        long InternalFire(TTrigger trigger, ManualResetEvent manualResetEvent, params object[] args)
+        void InternalFire(TTrigger trigger, ManualResetEvent manualResetEvent, params object[] args)
         {
-            _fireCounter++;
-
             if(manualResetEvent != null)
             {
-                _concurrentEventQueue.Enqueue(new QueuedTrigger{Trigger = trigger, Args = args, FireCounter = _fireCounter, ManualResetEvent = manualResetEvent });
+                _concurrentEventQueue.Enqueue(new QueuedTrigger{Trigger = trigger, Args = args, ManualResetEvent = manualResetEvent });
             }
             else
             {
-                _concurrentEventQueue.Enqueue(new QueuedTrigger{Trigger = trigger, Args = args, FireCounter = _fireCounter});
+                _concurrentEventQueue.Enqueue(new QueuedTrigger{Trigger = trigger, Args = args});
             }
-
-            return _fireCounter;
         }
 
-        object InternalFireOne(TTrigger trigger, long fireCounter, params object[] args)
+        object InternalFireOne(TTrigger trigger, params object[] args)
         {
             TriggerWithParameters configuration;
             if (_triggerConfiguration.TryGetValue(trigger, out configuration))
@@ -391,7 +388,7 @@ namespace Stateless
                 if (onTransitioned != null)
                     onTransitioned(transition);
 
-                return newRepresentation.Enter(transition, fireCounter, args);
+                return newRepresentation.Enter(transition, args);
             }
 
             return null;

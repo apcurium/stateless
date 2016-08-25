@@ -21,8 +21,6 @@ namespace Stateless
             ExitActionBehavior _exitAction;
             internal ExitActionBehavior ExitAction { get { return _exitAction; } }
 
-            public event EventHandler<TriggerResultEventArgs> TriggerResultRaised;
-
             StateRepresentation _superstate; // null
 
             readonly ICollection<StateRepresentation> _substates = new List<StateRepresentation>();
@@ -91,14 +89,14 @@ namespace Stateless
                         Enforce.ArgumentNotNull(entryActionDescription, nameof(entryActionDescription)));
             }
 
-            public void AddExitAction(Func<Transition, object> func, string exitActionDescription)
+            public void AddExitAction(Action<Transition> action, string exitActionDescription)
             {
                 _exitAction = new ExitActionBehavior(
-                        Enforce.ArgumentNotNull(func, nameof(func)),
+                        Enforce.ArgumentNotNull(action, nameof(action)),
                         Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
             }
 
-            public object Enter(Transition transition, long fireCounter, params object[] entryArgs)
+            public object Enter(Transition transition, params object[] entryArgs)
             {
                 object result = null;
                 Enforce.ArgumentNotNull(transition, nameof(transition));
@@ -110,7 +108,7 @@ namespace Stateless
                 else if (!Includes(transition.Source))
                 {
                     if (_superstate != null)
-                        _superstate.Enter(transition, fireCounter, entryArgs);
+                        _superstate.Enter(transition, entryArgs);
 
                     result = ExecuteEntryActions(transition, entryArgs);
                 }
@@ -124,11 +122,11 @@ namespace Stateless
 
                 if (transition.IsReentry)
                 {
-                    var result = ExecuteExitActions(transition);
+                    ExecuteExitActions(transition);
                 }
                 else if (!Includes(transition.Destination))
                 {
-                    var result = ExecuteExitActions(transition);
+                    ExecuteExitActions(transition);
                     if (_superstate != null)
                         _superstate.Exit(transition);
                 }
@@ -169,17 +167,17 @@ namespace Stateless
                 return _entryAction.Func(transition, entryArgs);
             }           
 
-            object ExecuteExitActions(Transition transition)
+            void ExecuteExitActions(Transition transition)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
 
                 if (_exitAction == null)
                 {
-                    return null;
+                    return;
                 }
 
                 _logger?.Info($"[{_exitAction.ActionDescription}]");
-                return _exitAction.Func(transition);
+                _exitAction.Action(transition);
             }
 
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)

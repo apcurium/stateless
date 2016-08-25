@@ -94,8 +94,8 @@ namespace TelephoneCallExample
 
             driverStateMachine.Start(TaskScheduler.Default);
 
-            FireWithResult(driverStateMachine, Trigger.ToDriving);
-            FireWithResult(driverStateMachine, Trigger.ToInnerDriving1);
+            var result = FireWithResult(driverStateMachine, Trigger.ToDriving).Result;
+            result = FireWithResult(driverStateMachine, Trigger.ToInnerDriving1).Result;
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
 
             Console.WriteLine("done main");
@@ -143,10 +143,9 @@ namespace TelephoneCallExample
 
         }
 
-        static object DrivingOnExit(object value)
+        static void DrivingOnExit(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit");
-            return null;
         }
 
         static object DrivingInner1OnEntry(object value)
@@ -155,10 +154,9 @@ namespace TelephoneCallExample
             return new List<string>() {"teset", "encore"};
         }
 
-        static object DrivingInner2OnExit(object value)
+        static void DrivingInner2OnExit(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnExit  {value}");
-            return null;
         }
 
         static object DrivingInner2OnEntry(object value)
@@ -167,10 +165,9 @@ namespace TelephoneCallExample
             return null;
         }
 
-        static object DrivingInner1OnExit(object value)
+        static void DrivingInner1OnExit(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnExit  {value}");
-            return null;
         }
 
         static object OnDutyNotDrivingOnEntry(object value, object value2)
@@ -179,10 +176,9 @@ namespace TelephoneCallExample
             return null;
         }
 
-        static object OnDutyNotDrivingOnExit()
+        static void OnDutyNotDrivingOnExit()
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnExit");
-            return null;
         }
 
         static object SleeperBerthgOnEntry(object value)
@@ -191,10 +187,9 @@ namespace TelephoneCallExample
             return null;
         }
 
-        static object SleeperBerthgOnExit()
+        static void SleeperBerthgOnExit()
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnExit");
-            return null;
         }
 
         static object OffDutyOnEntry(object value)
@@ -203,10 +198,9 @@ namespace TelephoneCallExample
             return null;
         }
 
-        static object OffDutyOnExit()
+        static void OffDutyOnExit()
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OffDutyOnExit");
-            return null;
         }
 
         static async Task<object> FireWithResult(StateMachine<State, Trigger> stateMachine, Trigger trigger)

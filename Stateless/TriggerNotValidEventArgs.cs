@@ -20,11 +20,6 @@ namespace Stateless
         public TState CurrentState { get; }
 
         /// <summary>
-        /// FireCounter
-        /// </summary>
-        public Int64 FireCounter { get; }  
-
-        /// <summary>
         /// Message
         /// </summary>
         public String Message { get; }
@@ -32,11 +27,10 @@ namespace Stateless
         /// <summary>
         /// Constructor
         /// </summary>
-        public TriggerNotValidEventArgs(TTrigger trigger, TState currentState, Int64 fireCounter, string message = null)
+        public TriggerNotValidEventArgs(TTrigger trigger, TState currentState, string message = null)
         {
             Trigger = trigger;
             CurrentState = currentState;
-            FireCounter = fireCounter;
             Message = message;
         }
     }

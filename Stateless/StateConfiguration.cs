@@ -323,7 +323,7 @@ namespace Stateless
             /// <param name="exitAction">Action to execute.</param>
             /// <param name="exitActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnExit(Func<object> exitAction, string exitActionDescription = null)
+            public StateConfiguration OnExit(Action exitAction, string exitActionDescription = null)
             {
                 Enforce.ArgumentNotNull(exitAction, nameof(exitAction));
                 return OnExit(
@@ -338,7 +338,7 @@ namespace Stateless
             /// <param name="exitAction">Action to execute, providing details of the transition.</param>
             /// <param name="exitActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnExit(Func<Transition, object> exitAction, string exitActionDescription = null)
+            public StateConfiguration OnExit(Action<Transition> exitAction, string exitActionDescription = null)
             {
                 Enforce.ArgumentNotNull(exitAction, nameof(exitAction));
                 _representation.AddExitAction(
