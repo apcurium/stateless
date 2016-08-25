@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Amp.Logging;
@@ -47,6 +48,7 @@ namespace TelephoneCallExample
                 .OnEntryFrom(toOffDuty, OffDutyOnEntry)
                 .OnExit(OffDutyOnExit)
                 .PermitDynamic(toDriving, arg0 => State.Driving)
+                .PermitDynamic(toDrivingInner1, arg0 => State.DrivingInner1)
                 .PermitDynamic(toSleeperBerth, _ => State.SleeperBerth)
                 .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
@@ -92,9 +94,8 @@ namespace TelephoneCallExample
 
             driverStateMachine.Start(TaskScheduler.Default);
 
-            OffDutyOnEntry(null);
-            Fire(driverStateMachine, Trigger.ToOffDuty);
-            Fire(driverStateMachine, Trigger.ToInnerDriving1);
+            FireWithResult(driverStateMachine, Trigger.ToDriving);
+            FireWithResult(driverStateMachine, Trigger.ToInnerDriving1);
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
 
             Console.WriteLine("done main");
@@ -102,7 +103,7 @@ namespace TelephoneCallExample
             var t1 = Task.Factory.StartNew(() =>
             {
                 Fire(driverStateMachine, Trigger.ToDriving);
-                Fire(driverStateMachine, Trigger.ToInnerDriving1);
+                FireWithResult(driverStateMachine, Trigger.ToInnerDriving1);
                 Fire(driverStateMachine, Trigger.ToInnerDriving2);
                 Fire(driverStateMachine, Trigger.ToOffDuty, 2);
                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 3);
@@ -111,15 +112,15 @@ namespace TelephoneCallExample
                 Fire(driverStateMachine, Trigger.ToDriving, 6);
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current);
 
-            //var t2 =Task.Run(() =>
-            //{
-            //    Fire(driverStateMachine, Trigger.ToOffDuty, 7);
-            //    Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
-            //    Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
-            //    Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
-            //});
+            var t2 = Task.Run(() =>
+             {
+                 Fire(driverStateMachine, Trigger.ToOffDuty, 7);
+                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
+                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
+                 Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
+             });
 
-            Task.WhenAll(t1).Wait();
+            Task.WhenAll(t1,t2).Wait();
 
 
             Console.WriteLine("Press any key...");
@@ -138,7 +139,7 @@ namespace TelephoneCallExample
 
             Thread.Sleep(2000);
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DOOOOOOOONE");
-            return null;
+            return 45;
 
         }
 
@@ -151,7 +152,7 @@ namespace TelephoneCallExample
         static object DrivingInner1OnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnEntry {value}");
-            return null;
+            return new List<string>() {"teset", "encore"};
         }
 
         static object DrivingInner2OnExit(object value)
@@ -208,66 +209,66 @@ namespace TelephoneCallExample
             return null;
         }
 
+        static async Task<object> FireWithResult(StateMachine<State, Trigger> stateMachine, Trigger trigger)
+        {
+            return await Task.Run(() =>
+            {
+                var mre = new ManualResetEvent(false);
+                stateMachine.Fire(trigger, mre);
+                mre.WaitOne();
+                var result = stateMachine.ResultFromFire;
+                stateMachine.SetManualResetEventAfterGetResult();
+
+                return result;
+            }).ConfigureAwait(false);
+        }
+
+        static async Task<object> FireWithResult<TArg0>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0)
+        {
+            return await Task.Run(() =>
+            {
+                var mre = new ManualResetEvent(false);
+                stateMachine.Fire(trigger, mre, arg0);
+                mre.WaitOne();
+                var result = stateMachine.ResultFromFire;
+                stateMachine.SetManualResetEventAfterGetResult();
+
+                return result;
+            }).ConfigureAwait(false);
+        }
+
+        static async Task<object> FireWithResult<TArg0, TArg1>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1)
+        {
+            return await Task.Run(() =>
+            {
+                var mre = new ManualResetEvent(false);
+                stateMachine.Fire(trigger, mre, arg0, arg1);
+                mre.WaitOne();
+                var result = stateMachine.ResultFromFire;
+                stateMachine.SetManualResetEventAfterGetResult();
+
+                return result;
+            }).ConfigureAwait(false);
+        }
+
         static void Fire(StateMachine<State, Trigger> stateMachine, Trigger trigger)
         {
-
-            try
-            {
-                stateMachine.Fire(trigger);
-            }
-            catch (InvalidOperationException ex)
-            {
-                
-       
-            }
-            catch (Exception ex)
-            {
-
-
-            }
-
+            stateMachine.Fire(trigger, null);
         }
 
         static void Fire<TArg0>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0)
         {
-
-            try
-            {
-                stateMachine.Fire(trigger, arg0);
-            }
-            catch (Exception)
-            {
-
-
-            }
+            stateMachine.Fire(trigger, null, arg0);
         }
 
         static void Fire<TArg0, TArg1>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1)
         {
-
-            try
-            {
-                stateMachine.Fire(trigger, arg0, arg1);
-            }
-            catch (Exception ex)
-            {
-
-
-            }
+            stateMachine.Fire(trigger, null, arg0, arg1);
         }
 
         static void Fire<TArg0, TArg1, TArg2>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1, TArg2 arg2)
         {
-
-            try
-            {
-                stateMachine.Fire(trigger, arg0, arg1, arg2);
-            }
-            catch (Exception)
-            {
-
-
-            }
+            stateMachine.Fire(trigger, null, arg0, arg1, arg2);
         }
 
         static void Print(StateMachine<State, Trigger> stateMachine)

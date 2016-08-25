@@ -98,24 +98,24 @@ namespace Stateless
                         Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
             }
 
-            public void Enter(Transition transition, long fireCounter, params object[] entryArgs)
+            public object Enter(Transition transition, long fireCounter, params object[] entryArgs)
             {
+                object result = null;
                 Enforce.ArgumentNotNull(transition, nameof(transition));
 
                 if (transition.IsReentry)
                 {
-                    var result = ExecuteEntryActions(transition, entryArgs);
-                    TriggerResultRaised?.Invoke(this, new TriggerResultEventArgs(fireCounter, result));
-
+                    result = ExecuteEntryActions(transition, entryArgs);
                 }
                 else if (!Includes(transition.Source))
                 {
                     if (_superstate != null)
                         _superstate.Enter(transition, fireCounter, entryArgs);
 
-                    var result = ExecuteEntryActions(transition, entryArgs);
-                    TriggerResultRaised?.Invoke(this, new TriggerResultEventArgs(fireCounter, result));
+                    result = ExecuteEntryActions(transition, entryArgs);
                 }
+
+                return result;
             }
 
             public void Exit(Transition transition)
