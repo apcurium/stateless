@@ -92,6 +92,7 @@ namespace TelephoneCallExample
                 .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
 
 
+            driverStateMachine.ToDotGraph();
             driverStateMachine.Start(TaskScheduler.Default);
 
             var result = FireWithResult(driverStateMachine, Trigger.ToDriving).Result;

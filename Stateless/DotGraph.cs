@@ -60,10 +60,15 @@ namespace Stateless
                 {
                     TState source = stateCfg.Key;
 
-                    lines.Add(string.Format(" {0} -> \"{1}\" [label=\"On Entry\" style=dotted];", source, stateCfg.Value.EntryAction.ActionDescription));
-                    
-                    lines.Add(string.Format(" {0} -> \"{1}\" [label=\"On Exit\" style=dotted];", source, stateCfg.Value.ExitAction.ActionDescription));
-                    
+                    if (stateCfg.Value.EntryAction != null)
+                    {
+                        lines.Add($" {source} -> \"{stateCfg.Value.EntryAction.ActionDescription}\" [label=\"On Entry\" style=dotted];");
+                    }
+
+                    if (stateCfg.Value.ExitAction != null)
+                    {
+                        lines.Add($" {source} -> \"{stateCfg.Value.ExitAction.ActionDescription}\" [label=\"On Exit\" style=dotted];");
+                    }
                 }
             }
 
