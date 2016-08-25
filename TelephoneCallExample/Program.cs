@@ -14,6 +14,7 @@ namespace TelephoneCallExample
         enum Trigger
         {
             ToDriving,
+            ToInternalDriving,
             ToInnerDriving1,
             ToInnerDriving2,
             ToSleeperBerth,
@@ -38,6 +39,7 @@ namespace TelephoneCallExample
             driverStateMachine.TriggerNotValidRaised += DriverStateMachine_TriggerNotValidRaised;
 
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
+            var toInternalDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInternalDriving);
             var toDrivingInner1 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving1);
             var toDrivingInner2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving2);
             var toSleeperBerth = driverStateMachine.SetTriggerParameters<object>(Trigger.ToSleeperBerth);
@@ -69,6 +71,7 @@ namespace TelephoneCallExample
             driverStateMachine.Configure(State.Driving)
                 .OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
                 .OnExit(DrivingOnExit)
+                .InternalTransition(toInternalDriving, DrivingOnInternal)
                 .PermitDynamic(toDrivingInner1, _ => State.DrivingInner1)
                 .PermitDynamic(toDrivingInner2, _ => State.DrivingInner2)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
@@ -96,6 +99,7 @@ namespace TelephoneCallExample
             driverStateMachine.Start(TaskScheduler.Default);
 
             var result = FireWithResult(driverStateMachine, Trigger.ToDriving).Result;
+            Fire(driverStateMachine, Trigger.ToInternalDriving);
             result = FireWithResult(driverStateMachine, Trigger.ToInnerDriving1).Result;
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
 
@@ -142,6 +146,11 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DOOOOOOOONE");
             return 45;
 
+        }
+
+        static void DrivingOnInternal(object value, StateMachine<State,Trigger>.Transition transition)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal");
         }
 
         static void DrivingOnExit(object value)

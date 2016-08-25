@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Amp.Logging;
 
 namespace Stateless
@@ -20,6 +19,8 @@ namespace Stateless
             internal EntryActionBehavior EntryAction { get { return _entryAction; } }
             ExitActionBehavior _exitAction;
             internal ExitActionBehavior ExitAction { get { return _exitAction; } }
+
+            readonly ICollection<Action<Transition, object[]>> _internalActions = new List<Action<Transition, object[]>>();
 
             StateRepresentation _superstate; // null
 
@@ -94,6 +95,22 @@ namespace Stateless
                 _exitAction = new ExitActionBehavior(
                         Enforce.ArgumentNotNull(action, nameof(action)),
                         Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
+            }
+
+            public void AddInternalAction(Action<Transition, object[]> action)
+            {
+                _internalActions.Add(Enforce.ArgumentNotNull(action, "action"));
+            }
+
+            internal void AddInternalAction(TTrigger trigger, Action<Transition, object[]> action)
+            {
+                Enforce.ArgumentNotNull(action, "action");
+
+                _internalActions.Add((t, args) =>
+                {
+                    if (t.Trigger.Equals(trigger))
+                        action(t, args);
+                });
             }
 
             public object Enter(Transition transition, params object[] entryArgs)
@@ -180,6 +197,25 @@ namespace Stateless
                 _exitAction.Action(transition);
             }
 
+            void ExecuteInternalActions(Transition transition, object[] args)
+            {
+                var possibleActions = new List<Action<Transition, object[]>>();
+
+                // Look for actions in superstate(s) recursivly until we hit the topmost superstate
+                StateRepresentation aStateRep = this;
+                do
+                {
+                    possibleActions.AddRange(aStateRep._internalActions);
+                    aStateRep = aStateRep._superstate;
+                } while (aStateRep != null);
+
+                // Execute internal transition event handler
+                foreach (var action in possibleActions)
+                {
+                    action(transition, args);
+                }
+            }
+
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)
             {
                 ICollection<TriggerBehaviour> allowed;
@@ -242,6 +278,11 @@ namespace Stateless
 
                     return result.ToArray();
                 }
+            }
+            internal void InternalAction(Transition transition, object[] args)
+            {
+                Enforce.ArgumentNotNull(transition, "transition");
+                ExecuteInternalActions(transition, args);
             }
         }
     }
