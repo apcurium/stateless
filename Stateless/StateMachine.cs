@@ -129,6 +129,7 @@ namespace Stateless
                             {
                                 // raise an event to informe
                                 _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
+                                queuedEvent.ManualResetEvent?.Set();
                                 TriggerNotValidRaised?.Invoke(this, new TriggerNotValidEventArgs<TTrigger, TState>(queuedEvent.Trigger, State));
                             }
                             catch(Exception ex)
