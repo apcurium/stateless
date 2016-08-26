@@ -135,6 +135,7 @@ namespace Stateless
                             catch(Exception ex)
                             {
                                 _logger?.Error(ex, "An unexpected error occurs");
+                                queuedEvent.ManualResetEvent?.Set();
                                 _cancellationTokenSource.Cancel();
                                 throw;
                             }
