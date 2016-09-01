@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 namespace Stateless
 {
     /// <summary>
-    /// FireResponse
+    /// FireResult
     /// </summary>
-    public class FireResponse
+    public class FireResult
     {
         /// <summary>
         /// IsTriggerAuthorized
@@ -22,11 +22,11 @@ namespace Stateless
         public object Response { get; }
 
         /// <summary>
-        /// FireResponse
+        /// FireResult
         /// </summary>
         /// <param name="isTriggerAuthorized"></param>
         /// <param name="response"></param>
-        public FireResponse(bool isTriggerAuthorized, object response = null)
+        public FireResult(bool isTriggerAuthorized, object response = null)
         {
             IsTriggerAuthorized = isTriggerAuthorized;
             Response = response;

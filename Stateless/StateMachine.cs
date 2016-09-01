@@ -32,7 +32,7 @@ namespace Stateless
         /// <summary>
         /// Result
         /// </summary>
-        public FireResponse ResultFromFire { get; private set; }
+        public FireResult ResultFromFire { get; private set; }
         
         private class QueuedTrigger
         {
@@ -125,7 +125,7 @@ namespace Stateless
                             catch (InvalidTriggerException)
                             {
                                 _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
-                                ResultFromFire = new FireResponse(false);
+                                ResultFromFire = new FireResult(false);
                                 queuedEvent.ManualResetEvent?.Set();
 
                                 if (queuedEvent.ManualResetEvent != null)
@@ -362,7 +362,7 @@ namespace Stateless
             }
         }
 
-        FireResponse InternalFireOne(TTrigger trigger, params object[] args)
+        FireResult InternalFireOne(TTrigger trigger, params object[] args)
         {
             TriggerWithParameters configuration;
             if (_triggerConfiguration.TryGetValue(trigger, out configuration))
@@ -375,7 +375,7 @@ namespace Stateless
             if (!representativeState.TryFindHandler(trigger, out triggerBehaviour))
             {
                 _unhandledTriggerAction(representativeState.UnderlyingState, trigger);
-                return new FireResponse(false);
+                return new FireResult(false);
             }
 
             TState destination;

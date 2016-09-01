@@ -53,7 +53,7 @@
     <Compile Include="Enforce.cs" />
     <Compile Include="EntryActionBehaviour.cs" />
     <Compile Include="ExitActionBehaviour.cs" />
-    <Compile Include="FireResponse.cs" />
+    <Compile Include="FireResult.cs" />
     <Compile Include="IgnoredTriggerBehaviour.cs" />
     <Compile Include="InvalidTriggerException.cs" />
     <Compile Include="InternalTriggerBehaviour.cs" />
