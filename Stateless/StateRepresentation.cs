@@ -113,7 +113,7 @@ namespace Stateless
                 });
             }
 
-            public object Enter(Transition transition, params object[] entryArgs)
+            public FireResponse Enter(Transition transition, params object[] entryArgs)
             {
                 object result = null;
                 Enforce.ArgumentNotNull(transition, nameof(transition));
@@ -130,7 +130,7 @@ namespace Stateless
                     result = ExecuteEntryActions(transition, entryArgs);
                 }
 
-                return result;
+                return new FireResponse(true, result);
             }
 
             public void Exit(Transition transition)

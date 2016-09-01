@@ -34,9 +34,8 @@ namespace TelephoneCallExample
 
         static void Main(string[] args)
         {
-            driverStateMachine  = new StateMachine<State, Trigger>(State.OffDuty, LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
-
-            driverStateMachine.TriggerNotValidRaised += DriverStateMachine_TriggerNotValidRaised;
+            driverStateMachine = new StateMachine<State, Trigger>(State.OffDuty,
+                LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
 
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
             var toInternalDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInternalDriving);
@@ -98,8 +97,12 @@ namespace TelephoneCallExample
             driverStateMachine.ToDotGraph();
             driverStateMachine.Start(TaskScheduler.Default);
 
-            var result = FireWithResult(driverStateMachine, Trigger.ToDriving).Result;
-            Fire(driverStateMachine, Trigger.ToInternalDriving);
+            FireResponse result;
+            result = FireWithResult(driverStateMachine, Trigger.ToOffDuty).Result;
+
+            Fire(driverStateMachine, Trigger.ToOffDuty);
+
+
             result = FireWithResult(driverStateMachine, Trigger.ToInnerDriving1).Result;
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
 
@@ -118,24 +121,18 @@ namespace TelephoneCallExample
             }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current);
 
             var t2 = Task.Run(() =>
-             {
-                 Fire(driverStateMachine, Trigger.ToOffDuty, 7);
-                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
-                 Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
-                 Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
-             });
+            {
+                Fire(driverStateMachine, Trigger.ToOffDuty, 7);
+                Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
+                Fire(driverStateMachine, Trigger.ToSleeperBerth, 9);
+                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
+            });
 
-            Task.WhenAll(t1,t2).Wait();
-
+            Task.WhenAll(t1, t2).Wait();
 
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
             driverStateMachine.Stop();
-        }
-
-        private static void DriverStateMachine_TriggerNotValidRaised(object sender, TriggerNotValidEventArgs<Trigger, State> e)
-        {
-            Console.WriteLine($"CALLBACK [{e.CurrentState}] [{e.Trigger}]");
         }
 
         static object DrivingOnEntry(object value)
@@ -148,7 +145,7 @@ namespace TelephoneCallExample
 
         }
 
-        static void DrivingOnInternal(object value, StateMachine<State,Trigger>.Transition transition)
+        static void DrivingOnInternal(object value, StateMachine<State, Trigger>.Transition transition)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal");
         }
@@ -182,7 +179,8 @@ namespace TelephoneCallExample
 
         static object OnDutyNotDrivingOnEntry(object value, object value2)
         {
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnEntry {value} {value2}");
+            Console.WriteLine(
+                $"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnEntry {value} {value2}");
             return null;
         }
 
@@ -213,7 +211,7 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OffDutyOnExit");
         }
 
-        static async Task<object> FireWithResult(StateMachine<State, Trigger> stateMachine, Trigger trigger)
+        static async Task<FireResponse> FireWithResult(StateMachine<State, Trigger> stateMachine, Trigger trigger)
         {
             return await Task.Run(() =>
             {
@@ -225,9 +223,10 @@ namespace TelephoneCallExample
 
                 return result;
             }).ConfigureAwait(false);
+            
         }
 
-        static async Task<object> FireWithResult<TArg0>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0)
+        static async Task<FireResponse> FireWithResult<TArg0>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0)
         {
             return await Task.Run(() =>
             {
@@ -241,7 +240,7 @@ namespace TelephoneCallExample
             }).ConfigureAwait(false);
         }
 
-        static async Task<object> FireWithResult<TArg0, TArg1>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1)
+        static async Task<FireResponse> FireWithResult<TArg0, TArg1>(StateMachine<State, Trigger> stateMachine, Trigger trigger, TArg0 arg0, TArg1 arg1)
         {
             return await Task.Run(() =>
             {

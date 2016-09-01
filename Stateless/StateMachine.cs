@@ -32,11 +32,8 @@ namespace Stateless
         /// <summary>
         /// Result
         /// </summary>
-        public object ResultFromFire { get; private set; }
+        public FireResponse ResultFromFire { get; private set; }
         
-
-        public event EventHandler<TriggerNotValidEventArgs<TTrigger, TState>> TriggerNotValidRaised; 
-
         private class QueuedTrigger
         {
             public TTrigger Trigger { get; set; }
@@ -127,10 +124,14 @@ namespace Stateless
                             }
                             catch (InvalidTriggerException)
                             {
-                                // raise an event to informe
                                 _logger?.Info($"Trigger [{queuedEvent.Trigger}] is not valid in current state [{State}]");
+                                ResultFromFire = new FireResponse(false);
                                 queuedEvent.ManualResetEvent?.Set();
-                                TriggerNotValidRaised?.Invoke(this, new TriggerNotValidEventArgs<TTrigger, TState>(queuedEvent.Trigger, State));
+
+                                if (queuedEvent.ManualResetEvent != null)
+                                {
+                                    _resultManualResetEvent.WaitOne();
+                                }
                             }
                             catch(Exception ex)
                             {
@@ -361,7 +362,7 @@ namespace Stateless
             }
         }
 
-        object InternalFireOne(TTrigger trigger, params object[] args)
+        FireResponse InternalFireOne(TTrigger trigger, params object[] args)
         {
             TriggerWithParameters configuration;
             if (_triggerConfiguration.TryGetValue(trigger, out configuration))
@@ -374,7 +375,7 @@ namespace Stateless
             if (!representativeState.TryFindHandler(trigger, out triggerBehaviour))
             {
                 _unhandledTriggerAction(representativeState.UnderlyingState, trigger);
-                return null;
+                return new FireResponse(false);
             }
 
             TState destination;
