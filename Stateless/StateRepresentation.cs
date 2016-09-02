@@ -20,7 +20,7 @@ namespace Stateless
             ExitActionBehavior _exitAction;
             internal ExitActionBehavior ExitAction { get { return _exitAction; } }
 
-            readonly ICollection<Action<Transition, object[]>> _internalActions = new List<Action<Transition, object[]>>();
+            InternalActionBehavior _internalAction;
 
             StateRepresentation _superstate; // null
 
@@ -97,20 +97,24 @@ namespace Stateless
                         Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
             }
 
-            public void AddInternalAction(Action<Transition, object[]> action)
+            public void AddInternalAction(Func<Transition, object[], object> func, string internalActionDescription)
             {
-                _internalActions.Add(Enforce.ArgumentNotNull(action, "action"));
+                _internalAction = new InternalActionBehavior(Enforce.ArgumentNotNull(func, nameof(func)), internalActionDescription);
             }
 
-            internal void AddInternalAction(TTrigger trigger, Action<Transition, object[]> action)
+            internal void AddInternalAction(TTrigger trigger, Func<Transition, object[], object> func, string internalActionDescription)
             {
-                Enforce.ArgumentNotNull(action, "action");
-
-                _internalActions.Add((t, args) =>
+                Enforce.ArgumentNotNull(func, nameof(func));
+                Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription));
+                
+                _internalAction = new InternalActionBehavior((t, args) =>
                 {
                     if (t.Trigger.Equals(trigger))
-                        action(t, args);
-                });
+                        return func(t, args);
+
+                    return null;
+                }, 
+                Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription)));
             }
 
             public FireResult Enter(Transition transition, params object[] entryArgs)
@@ -197,23 +201,36 @@ namespace Stateless
                 _exitAction.Action(transition);
             }
 
-            void ExecuteInternalActions(Transition transition, object[] args)
+            FireResult ExecuteInternalAction(Transition transition, object[] args)
             {
-                var possibleActions = new List<Action<Transition, object[]>>();
-
-                // Look for actions in superstate(s) recursivly until we hit the topmost superstate
-                StateRepresentation aStateRep = this;
-                do
+                if(_internalAction == null)
                 {
-                    possibleActions.AddRange(aStateRep._internalActions);
-                    aStateRep = aStateRep._superstate;
-                } while (aStateRep != null);
-
-                // Execute internal transition event handler
-                foreach (var action in possibleActions)
-                {
-                    action(transition, args);
+                    return new FireResult(false);    
                 }
+
+                if (args != null)
+                {
+                    if (args.Length != 1)
+                    {
+                        var objectToString = string.Empty;
+                        foreach (var obj in args)
+                        {
+                            objectToString += "[" + obj.ToString() + "]";
+                        }
+
+                        _logger?.Info($"[{_internalAction.ActionDescription}] values [{objectToString}]");
+                    }
+                    else
+                    {
+                        _logger?.Info($"[{_internalAction.ActionDescription}] values [{args[0].ToString()}]");
+                    }
+                }
+                else
+                {
+                    _logger?.Info($"[{_internalAction.ActionDescription}]");
+                }
+                return new FireResult(true, _internalAction.Func(transition, args));
+
             }
 
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)
@@ -279,10 +296,10 @@ namespace Stateless
                     return result.ToArray();
                 }
             }
-            internal void InternalAction(Transition transition, object[] args)
+            internal FireResult InternalAction(Transition transition, object[] args)
             {
                 Enforce.ArgumentNotNull(transition, "transition");
-                ExecuteInternalActions(transition, args);
+                return ExecuteInternalAction(transition, args);
             }
         }
     }

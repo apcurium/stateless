@@ -55,6 +55,7 @@
     <Compile Include="ExitActionBehaviour.cs" />
     <Compile Include="FireResult.cs" />
     <Compile Include="IgnoredTriggerBehaviour.cs" />
+    <Compile Include="InternalActionBehaviour.cs" />
     <Compile Include="InvalidTriggerException.cs" />
     <Compile Include="InternalTriggerBehaviour.cs" />
     <Compile Include="ParameterConversion.cs" />

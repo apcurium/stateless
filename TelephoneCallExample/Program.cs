@@ -70,7 +70,7 @@ namespace TelephoneCallExample
             driverStateMachine.Configure(State.Driving)
                 .OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
                 .OnExit(DrivingOnExit)
-                .InternalTransition(toInternalDriving, DrivingOnInternal)
+                .InternalTransition(toInternalDriving, DrivingOnInternal, "DrivingOnInternal")
                 .PermitDynamic(toDrivingInner1, _ => State.DrivingInner1)
                 .PermitDynamic(toDrivingInner2, _ => State.DrivingInner2)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
@@ -102,6 +102,8 @@ namespace TelephoneCallExample
 
             Fire(driverStateMachine, Trigger.ToOffDuty);
 
+            Fire(driverStateMachine, Trigger.ToDriving);
+            result = FireWithResult(driverStateMachine, Trigger.ToInternalDriving).Result;
 
             result = FireWithResult(driverStateMachine, Trigger.ToInnerDriving1).Result;
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
@@ -111,6 +113,7 @@ namespace TelephoneCallExample
             var t1 = Task.Factory.StartNew(() =>
             {
                 Fire(driverStateMachine, Trigger.ToDriving);
+                Fire(driverStateMachine, Trigger.ToInternalDriving);
                 FireWithResult(driverStateMachine, Trigger.ToInnerDriving1);
                 Fire(driverStateMachine, Trigger.ToInnerDriving2);
                 Fire(driverStateMachine, Trigger.ToOffDuty, 2);
@@ -145,9 +148,10 @@ namespace TelephoneCallExample
 
         }
 
-        static void DrivingOnInternal(object value, StateMachine<State, Trigger>.Transition transition)
+        static object DrivingOnInternal(object value, StateMachine<State, Trigger>.Transition transition)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal");
+            return "coucou";
         }
 
         static void DrivingOnExit(object value)

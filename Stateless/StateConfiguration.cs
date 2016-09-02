@@ -43,42 +43,48 @@ namespace Stateless
                 EnforceNotIdentityTransition(destinationState);
                 return InternalPermit(trigger, destinationState, string.Empty);
             }
+
             /// <summary>
             /// 
             /// </summary>
             /// <param name="trigger"></param>
-            /// <param name="entryAction"></param>
+            /// <param name="internalAction"></param>
+            /// <param name="internalActionDescription"></param>
             /// <returns></returns>
-            public StateConfiguration InternalTransition(TTrigger trigger, Action<Transition> entryAction)
+            public StateConfiguration InternalTransition(TTrigger trigger, Func<Transition, object> internalAction, string internalActionDescription)
             {
                 _representation.AddTriggerBehaviour(new InternalTriggerBehaviour(trigger));
-                _representation.AddInternalAction(trigger, (t, args) => entryAction(t));
+                _representation.AddInternalAction(trigger, (t, args) => internalAction(t), internalActionDescription);
                 return this;
             }
+
             /// <summary>
             /// 
             /// </summary>
             /// <typeparam name="TArg0"></typeparam>
             /// <param name="trigger"></param>
-            /// <param name="entryAction"></param>
+            /// <param name="internalAction"></param>
+            /// <param name="internalActionDescription"></param>
             /// <returns></returns>
-            public StateConfiguration InternalTransition<TArg0>(TTrigger trigger, Action<Transition> entryAction)
+            public StateConfiguration InternalTransition<TArg0>(TTrigger trigger, Func<Transition, object> internalAction, string internalActionDescription)
             {
                 _representation.AddTriggerBehaviour(new InternalTriggerBehaviour(trigger));
-                _representation.AddInternalAction(trigger, (t, args) => entryAction(t));
+                _representation.AddInternalAction(trigger, (t, args) => internalAction(t), internalActionDescription);
                 return this;
             }
+
             /// <summary>
             /// 
             /// </summary>
             /// <typeparam name="TArg0"></typeparam>
             /// <param name="trigger"></param>
-            /// <param name="entryAction"></param>
+            /// <param name="internalAction"></param>
+            /// <param name="internalActionDescription"></param>
             /// <returns></returns>
-            public StateConfiguration InternalTransition<TArg0>(TriggerWithParameters<TArg0> trigger, Action<TArg0, Transition> entryAction)
+            public StateConfiguration InternalTransition<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Transition, object> internalAction, string internalActionDescription)
             {
                 _representation.AddTriggerBehaviour(new InternalTriggerBehaviour(trigger.Trigger));
-                _representation.AddInternalAction(trigger.Trigger, (t, args) => entryAction(ParameterConversion.Unpack<TArg0>(args, 0), t));
+                _representation.AddInternalAction(trigger.Trigger, (t, args) => internalAction(ParameterConversion.Unpack<TArg0>(args, 0), t), internalActionDescription);
                 return this;
             }
             /// <summary>

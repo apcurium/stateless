@@ -397,7 +397,7 @@ namespace Stateless
             {
                 var transition = new Transition(source, destination, trigger);
 
-                CurrentRepresentation.InternalAction(transition, args);
+                return CurrentRepresentation.InternalAction(transition, args);
             }
             
             return null;
