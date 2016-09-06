@@ -20,7 +20,7 @@ namespace Stateless
             ExitActionBehavior _exitAction;
             internal ExitActionBehavior ExitAction { get { return _exitAction; } }
 
-            InternalActionBehavior _internalAction;
+            readonly ICollection<InternalActionBehavior> _internalActions = new List<InternalActionBehavior>();
 
             StateRepresentation _superstate; // null
 
@@ -97,24 +97,20 @@ namespace Stateless
                         Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
             }
 
-            public void AddInternalAction(Func<Transition, object[], object> func, string internalActionDescription)
-            {
-                _internalAction = new InternalActionBehavior(Enforce.ArgumentNotNull(func, nameof(func)), internalActionDescription);
-            }
-
             internal void AddInternalAction(TTrigger trigger, Func<Transition, object[], object> func, string internalActionDescription)
             {
                 Enforce.ArgumentNotNull(func, nameof(func));
                 Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription));
-                
-                _internalAction = new InternalActionBehavior((t, args) =>
+
+                _internalActions.Add(new InternalActionBehavior((t, args) =>
                 {
                     if (t.Trigger.Equals(trigger))
                         return func(t, args);
 
                     return null;
                 }, 
-                Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription)));
+                trigger,
+                Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription))));
             }
 
             public FireResult Enter(Transition transition, params object[] entryArgs)
@@ -186,7 +182,7 @@ namespace Stateless
                 }
 
                 return _entryAction.Func(transition, entryArgs);
-            }           
+            }
 
             void ExecuteExitActions(Transition transition)
             {
@@ -203,34 +199,51 @@ namespace Stateless
 
             FireResult ExecuteInternalAction(Transition transition, object[] args)
             {
-                if(_internalAction == null)
+                var possibleActions = new List<InternalActionBehavior>();
+
+                // Look for actions in superstate(s) recursivly until we hit the topmost superstate
+                StateRepresentation aStateRep = this;
+                do
                 {
-                    return new FireResult(false);    
+                    possibleActions.AddRange(aStateRep._internalActions);
+                    aStateRep = aStateRep._superstate;
+                } while (aStateRep != null);
+
+                if (!possibleActions.Any())
+                {
+                    return new FireResult(false);
                 }
 
-                if (args != null)
+                foreach (var internalAction in possibleActions)
                 {
-                    if (args.Length != 1)
+                    if (internalAction.Trigger.Equals(transition.Trigger))
                     {
-                        var objectToString = string.Empty;
-                        foreach (var obj in args)
+                        if (args != null)
                         {
-                            objectToString += "[" + obj.ToString() + "]";
+                            if (args.Length != 1)
+                            {
+                                var objectToString = string.Empty;
+                                foreach (var obj in args)
+                                {
+                                    objectToString += "[" + obj.ToString() + "]";
+                                }
+
+                                _logger?.Info($"[{internalAction.ActionDescription}] values [{objectToString}]");
+                            }
+                            else
+                            {
+                                _logger?.Info($"[{internalAction.ActionDescription}] values [{args[0].ToString()}]");
+                            }
                         }
-
-                        _logger?.Info($"[{_internalAction.ActionDescription}] values [{objectToString}]");
-                    }
-                    else
-                    {
-                        _logger?.Info($"[{_internalAction.ActionDescription}] values [{args[0].ToString()}]");
+                        else
+                        {
+                            _logger?.Info($"[{internalAction.ActionDescription}]");
+                        }
+                        return new FireResult(true, internalAction.Func(transition, args));
                     }
                 }
-                else
-                {
-                    _logger?.Info($"[{_internalAction.ActionDescription}]");
-                }
-                return new FireResult(true, _internalAction.Func(transition, args));
 
+                return null;
             }
 
             public void AddTriggerBehaviour(TriggerBehaviour triggerBehaviour)

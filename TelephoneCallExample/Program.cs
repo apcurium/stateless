@@ -15,6 +15,7 @@ namespace TelephoneCallExample
         {
             ToDriving,
             ToInternalDriving,
+            ToInternalDriving2,
             ToInnerDriving1,
             ToInnerDriving2,
             ToSleeperBerth,
@@ -38,7 +39,8 @@ namespace TelephoneCallExample
                 LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
 
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
-            var toInternalDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInternalDriving);
+            var toInternalDriving = driverStateMachine.SetTriggerParameters<string>(Trigger.ToInternalDriving);
+            var toInternalDriving2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInternalDriving2);
             var toDrivingInner1 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving1);
             var toDrivingInner2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInnerDriving2);
             var toSleeperBerth = driverStateMachine.SetTriggerParameters<object>(Trigger.ToSleeperBerth);
@@ -71,6 +73,7 @@ namespace TelephoneCallExample
                 .OnEntryFrom(toDriving, DrivingOnEntry, "DrivingOnEntry")
                 .OnExit(DrivingOnExit)
                 .InternalTransition(toInternalDriving, DrivingOnInternal, "DrivingOnInternal")
+                .InternalTransition(toInternalDriving2, DrivingOnInternal2, "DrivingOnInternal2")
                 .PermitDynamic(toDrivingInner1, _ => State.DrivingInner1)
                 .PermitDynamic(toDrivingInner2, _ => State.DrivingInner2)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
@@ -103,7 +106,8 @@ namespace TelephoneCallExample
             Fire(driverStateMachine, Trigger.ToOffDuty);
 
             Fire(driverStateMachine, Trigger.ToDriving);
-            result = FireWithResult(driverStateMachine, Trigger.ToInternalDriving).Result;
+            result = FireWithResult(driverStateMachine, Trigger.ToInternalDriving2).Result;
+            result = FireWithResult(driverStateMachine, Trigger.ToInternalDriving, "echo").Result;
 
             result = FireWithResult(driverStateMachine, Trigger.ToInnerDriving1).Result;
             Fire(driverStateMachine, Trigger.ToInnerDriving2);
@@ -148,10 +152,16 @@ namespace TelephoneCallExample
 
         }
 
-        static object DrivingOnInternal(object value, StateMachine<State, Trigger>.Transition transition)
+        static object DrivingOnInternal(string value, StateMachine<State, Trigger>.Transition transition)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal");
-            return "coucou";
+            return value;
+        }
+
+        static object DrivingOnInternal2(object value, StateMachine<State, Trigger>.Transition transition)
+        {
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal2");
+            return "HEEEEEEELLOO";
         }
 
         static void DrivingOnExit(object value)
