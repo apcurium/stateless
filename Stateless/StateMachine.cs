@@ -29,6 +29,8 @@ namespace Stateless
         event Action<Transition> _onTransitioned;
         CancellationTokenSource _cancellationTokenSource;
 
+        public event EventHandler<StateChangedEventArgs<TState>> StateChanged;
+
         /// <summary>
         /// Result
         /// </summary>
@@ -114,7 +116,10 @@ namespace Stateless
                                 {
                                     _resultManualResetEvent.Reset();
                                 }
+
                                 ResultFromFire = InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
+                                OnStateChanged(new StateChangedEventArgs<TState>(State));
+
                                 queuedEvent.ManualResetEvent?.Set();
 
                                 if (queuedEvent.ManualResetEvent != null)
@@ -533,6 +538,15 @@ namespace Stateless
         {
             if (onTransitionAction == null) throw new ArgumentNullException("onTransitionAction");
             _onTransitioned += onTransitionAction;
+        }
+
+        /// <summary>
+        /// On state changed.
+        /// </summary>
+        /// <param name="args">Arguments.</param>
+        protected virtual void OnStateChanged(StateChangedEventArgs<TState> args)
+        {
+            StateChanged?.Invoke(this, args);
         }
     }
 }

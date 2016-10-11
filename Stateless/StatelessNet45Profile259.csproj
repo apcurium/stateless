@@ -61,6 +61,7 @@
     <Compile Include="ParameterConversion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReflectionExtensions.cs" />
+    <Compile Include="StateChangedEventArgs.cs" />
     <Compile Include="StateConfiguration.cs" />
     <Compile Include="StateMachine.cs" />
     <Compile Include="StateReference.cs" />

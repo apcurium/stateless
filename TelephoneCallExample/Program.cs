@@ -38,6 +38,8 @@ namespace TelephoneCallExample
             driverStateMachine = new StateMachine<State, Trigger>(State.OffDuty,
                 LoggerFactory.GetLogger<StateMachine<State, Trigger>>(), "DRIVER");
 
+            driverStateMachine.StateChanged += StateChanged;
+
             var toDriving = driverStateMachine.SetTriggerParameters<object>(Trigger.ToDriving);
             var toInternalDriving = driverStateMachine.SetTriggerParameters<string>(Trigger.ToInternalDriving);
             var toInternalDriving2 = driverStateMachine.SetTriggerParameters<object>(Trigger.ToInternalDriving2);
@@ -140,6 +142,12 @@ namespace TelephoneCallExample
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
             driverStateMachine.Stop();
+        }
+
+        private static void StateChanged(object sender, StateChangedEventArgs<State> e)
+        {
+            Console.WriteLine($@"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} state changed EVENT {e.State}");
+
         }
 
         static object DrivingOnEntry(object value)
