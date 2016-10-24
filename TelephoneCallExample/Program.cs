@@ -60,6 +60,7 @@ namespace TelephoneCallExample
             driverStateMachine.Configure(State.SleeperBerth)
                 .OnEntryFrom(toSleeperBerth, SleeperBerthgOnEntry)
                 .OnExit(SleeperBerthgOnExit)
+                .PermitReentry(Trigger.ToSleeperBerth)
                 .PermitDynamic(toDriving, _ => State.Driving)
                 .PermitDynamic(toOffDuty, _ => State.OffDuty)
                 .PermitDynamic(toOnDutyNotDriving, (x, y) => State.OnDutyNotDriving);
@@ -105,7 +106,9 @@ namespace TelephoneCallExample
             FireResult result;
             result = FireWithResult(driverStateMachine, Trigger.ToOffDuty).Result;
 
-            Fire(driverStateMachine, Trigger.ToOffDuty);
+            Fire(driverStateMachine, Trigger.ToSleeperBerth, 8);
+            Console.WriteLine("reentry ToSleeperBerth");
+            Fire(driverStateMachine, Trigger.ToSleeperBerth, 10);
 
             Fire(driverStateMachine, Trigger.ToDriving);
             result = FireWithResult(driverStateMachine, Trigger.ToInternalDriving2).Result;
