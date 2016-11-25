@@ -114,7 +114,7 @@ namespace Stateless
                             {
                                 if(queuedEvent.ManualResetEvent != null)
                                 {
-                                    _resultManualResetEvent.Reset();
+                                    _resultManualResetEvent?.Reset();
                                 }
 
                                 ResultFromFire = InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
@@ -124,7 +124,7 @@ namespace Stateless
 
                                 if (queuedEvent.ManualResetEvent != null)
                                 {
-                                    _resultManualResetEvent.WaitOne();
+                                    _resultManualResetEvent?.WaitOne();
                                 }
                             }
                             catch (InvalidTriggerException)
@@ -135,12 +135,13 @@ namespace Stateless
 
                                 if (queuedEvent.ManualResetEvent != null)
                                 {
-                                    _resultManualResetEvent.WaitOne();
+                                    _resultManualResetEvent?.WaitOne();
                                 }
                             }
                             catch(Exception ex)
                             {
-                                _logger?.Error(ex, "An unexpected error occurs");
+                                _logger?.Error(ex, $"An unexpected error occurs in [{_stateMachineName}]");
+                                OnStateChanged(new StateChangedEventArgs<TState>(State));
                                 queuedEvent.ManualResetEvent?.Set();
                                 _resultManualResetEvent?.Set();
                             }
