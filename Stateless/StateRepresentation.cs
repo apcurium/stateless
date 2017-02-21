@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Amp.Logging;
 
 namespace Stateless
@@ -70,7 +71,7 @@ namespace Stateless
                     (Superstate != null && Superstate.TryFindHandlerWithUnmetGuardCondition(trigger, out handler)));
             }
 
-            public void AddEntryAction(TTrigger trigger, Func<Transition, object[], object> func, string entryActionDescription)
+            public void AddEntryAction(TTrigger trigger, Func<Transition, object[], Task<object>> func, string entryActionDescription)
             {
                 Enforce.ArgumentNotNull(func, nameof(func));
                 _entryAction = new EntryActionBehavior((t, args) =>
@@ -83,7 +84,7 @@ namespace Stateless
                     Enforce.ArgumentNotNull(entryActionDescription, nameof(entryActionDescription)));
             }
 
-            public void AddEntryAction(Func<Transition, object[], object> func, string entryActionDescription)
+            public void AddEntryAction(Func<Transition, object[], Task<object>> func, string entryActionDescription)
             {
                 _entryAction = new EntryActionBehavior(
                         Enforce.ArgumentNotNull(func, nameof(func)),
@@ -97,7 +98,7 @@ namespace Stateless
                         Enforce.ArgumentNotNull(exitActionDescription, nameof(exitActionDescription)));
             }
 
-            internal void AddInternalAction(TTrigger trigger, Func<Transition, object[], object> func, string internalActionDescription)
+            internal void AddInternalAction(TTrigger trigger, Func<Transition, object[], Task<object>> func, string internalActionDescription)
             {
                 Enforce.ArgumentNotNull(func, nameof(func));
                 Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription));
@@ -113,21 +114,21 @@ namespace Stateless
                 Enforce.ArgumentNotNull(internalActionDescription, nameof(internalActionDescription))));
             }
 
-            public FireResult Enter(Transition transition, params object[] entryArgs)
+            public async Task<FireResult> Enter(Transition transition, params object[] entryArgs)
             {
                 object result = null;
                 Enforce.ArgumentNotNull(transition, nameof(transition));
 
                 if (transition.IsReentry)
                 {
-                    result = ExecuteEntryActions(transition, entryArgs);
+                    result = await ExecuteEntryActions( transition, entryArgs);
                 }
                 else if (!Includes(transition.Source))
                 {
                     if (_superstate != null)
-                        _superstate.Enter(transition, entryArgs);
+                        await _superstate.Enter(transition, entryArgs);
 
-                    result = ExecuteEntryActions(transition, entryArgs);
+                    result = await ExecuteEntryActions(transition, entryArgs);
                 }
 
                 return new FireResult(true, result);
@@ -149,7 +150,7 @@ namespace Stateless
                 }
             }
 
-            object ExecuteEntryActions(Transition transition, object[] entryArgs)
+            private async Task<object> ExecuteEntryActions(Transition transition, object[] entryArgs)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
                 Enforce.ArgumentNotNull(entryArgs, nameof(entryArgs));
@@ -181,10 +182,11 @@ namespace Stateless
                     _logger?.Info($"[{_entryAction.ActionDescription}]");
                 }
 
-                return _entryAction.Func(transition, entryArgs);
+                var result = await _entryAction.Func( transition, entryArgs );
+                return result;
             }
 
-            void ExecuteExitActions(Transition transition)
+            private void ExecuteExitActions(Transition transition)
             {
                 Enforce.ArgumentNotNull(transition, nameof(transition));
 
@@ -197,7 +199,7 @@ namespace Stateless
                 _exitAction.Action(transition);
             }
 
-            FireResult ExecuteInternalAction(Transition transition, object[] args)
+            private async Task<FireResult> ExecuteInternalAction(Transition transition, object[] args)
             {
                 var possibleActions = new List<InternalActionBehavior>();
 
@@ -239,7 +241,9 @@ namespace Stateless
                         {
                             _logger?.Info($"[{internalAction.ActionDescription}]");
                         }
-                        return new FireResult(true, internalAction.Func(transition, args));
+
+                        var result = await internalAction.Func( transition, args );
+                        return new FireResult(true, result);
                     }
                 }
 
@@ -309,10 +313,10 @@ namespace Stateless
                     return result.ToArray();
                 }
             }
-            internal FireResult InternalAction(Transition transition, object[] args)
+            internal async Task<FireResult> InternalAction(Transition transition, object[] args)
             {
                 Enforce.ArgumentNotNull(transition, "transition");
-                return ExecuteInternalAction(transition, args);
+                return await ExecuteInternalAction(transition, args);
             }
         }
     }

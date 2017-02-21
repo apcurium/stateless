@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace Stateless
 {
@@ -51,7 +52,7 @@ namespace Stateless
             /// <param name="internalAction"></param>
             /// <param name="internalActionDescription"></param>
             /// <returns></returns>
-            public StateConfiguration InternalTransition(TTrigger trigger, Func<Transition, object> internalAction, string internalActionDescription)
+            public StateConfiguration InternalTransition(TTrigger trigger, Func<Transition, Task<object>> internalAction, string internalActionDescription)
             {
                 _representation.AddTriggerBehaviour(new InternalTriggerBehaviour(trigger));
                 _representation.AddInternalAction(trigger, (t, args) => internalAction(t), internalActionDescription);
@@ -66,7 +67,7 @@ namespace Stateless
             /// <param name="internalAction"></param>
             /// <param name="internalActionDescription"></param>
             /// <returns></returns>
-            public StateConfiguration InternalTransition<TArg0>(TTrigger trigger, Func<Transition, object> internalAction, string internalActionDescription)
+            public StateConfiguration InternalTransition<TArg0>(TTrigger trigger, Func<Transition, Task<object>> internalAction, string internalActionDescription)
             {
                 _representation.AddTriggerBehaviour(new InternalTriggerBehaviour(trigger));
                 _representation.AddInternalAction(trigger, (t, args) => internalAction(t), internalActionDescription);
@@ -81,7 +82,7 @@ namespace Stateless
             /// <param name="internalAction"></param>
             /// <param name="internalActionDescription"></param>
             /// <returns></returns>
-            public StateConfiguration InternalTransition<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Transition, object> internalAction, string internalActionDescription)
+            public StateConfiguration InternalTransition<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Transition, Task<object>> internalAction, string internalActionDescription)
             {
                 _representation.AddTriggerBehaviour(new InternalTriggerBehaviour(trigger.Trigger));
                 _representation.AddInternalAction(trigger.Trigger, (t, args) => internalAction(ParameterConversion.Unpack<TArg0>(args, 0), t), internalActionDescription);
@@ -181,7 +182,7 @@ namespace Stateless
             /// <param name="entryAction">Action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntry(Func<object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntry(Func<Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntry(
@@ -196,7 +197,7 @@ namespace Stateless
             /// <param name="entryAction">Action to execute, providing details of the transition.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntry(Func<Transition, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntry(Func<Transition, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 _representation.AddEntryAction(
@@ -213,7 +214,7 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom(TTrigger trigger, Func<object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom(TTrigger trigger, Func<Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntryFrom(
@@ -230,12 +231,12 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom(TTrigger trigger, Func<Transition, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom(TTrigger trigger, Func<Transition, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 _representation.AddEntryAction(
                     trigger,
-                    (t, args) => entryAction(t),
+                    async (t, args) => await entryAction(t),
                     entryActionDescription ?? entryAction.TryGetMethodName());
                 return this;
             }
@@ -249,13 +250,13 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 
                 return OnEntryFrom<TArg0>(
                     trigger,
-                    (a0, t) => entryAction(a0),
+                    async (a0, t) => await entryAction(a0),
                     entryActionDescription ?? entryAction.TryGetMethodName());
             }
 
@@ -268,13 +269,13 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Transition, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0>(TriggerWithParameters<TArg0> trigger, Func<TArg0, Transition, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 Enforce.ArgumentNotNull(trigger, nameof(trigger));
                 _representation.AddEntryAction(
                     trigger.Trigger,
-                    (t, args) => entryAction(
+                    async (t, args) => await entryAction(
                         ParameterConversion.Unpack<TArg0>(args, 0), t),
                         entryActionDescription ?? entryAction.TryGetMethodName());
                 return this;
@@ -290,12 +291,12 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Func<TArg0, TArg1, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Func<TArg0, TArg1, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntryFrom<TArg0, TArg1>(
                     trigger, 
-                    (a0, a1, t) => entryAction(a0, a1), entryActionDescription ?? entryAction.TryGetMethodName());
+                    async (a0, a1, t) => await entryAction(a0, a1), entryActionDescription ?? entryAction.TryGetMethodName());
             }
 
             /// <summary>
@@ -308,11 +309,11 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Func<TArg0, TArg1, Transition, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1>(TriggerWithParameters<TArg0, TArg1> trigger, Func<TArg0, TArg1, Transition, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 Enforce.ArgumentNotNull(trigger, nameof(trigger));
-                _representation.AddEntryAction(trigger.Trigger, (t, args) => entryAction(
+                _representation.AddEntryAction(trigger.Trigger, async (t, args) => await entryAction(
                     ParameterConversion.Unpack<TArg0>(args, 0),
                     ParameterConversion.Unpack<TArg1>(args, 1), t), entryActionDescription ?? entryAction.TryGetMethodName());
                 return this;
@@ -329,12 +330,12 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Func<TArg0, TArg1, TArg2, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Func<TArg0, TArg1, TArg2, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 return OnEntryFrom<TArg0, TArg1, TArg2>(
                     trigger, 
-                    (a0, a1, a2, t) => entryAction(a0, a1, a2), entryActionDescription ?? entryAction.TryGetMethodName());
+                    async (a0, a1, a2, t) => await entryAction(a0, a1, a2), entryActionDescription ?? entryAction.TryGetMethodName());
             }
 
             /// <summary>
@@ -348,11 +349,11 @@ namespace Stateless
             /// <param name="trigger">The trigger by which the state must be entered in order for the action to execute.</param>
             /// <param name="entryActionDescription">Action description.</param>
             /// <returns>The receiver.</returns>
-            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Func<TArg0, TArg1, TArg2, Transition, object> entryAction, string entryActionDescription = null)
+            public StateConfiguration OnEntryFrom<TArg0, TArg1, TArg2>(TriggerWithParameters<TArg0, TArg1, TArg2> trigger, Func<TArg0, TArg1, TArg2, Transition, Task<object>> entryAction, string entryActionDescription = null)
             {
                 Enforce.ArgumentNotNull(entryAction, nameof(entryAction));
                 Enforce.ArgumentNotNull(trigger, nameof(trigger));
-                _representation.AddEntryAction(trigger.Trigger, (t, args) => entryAction(
+                _representation.AddEntryAction(trigger.Trigger, async (t, args) => await entryAction(
                     ParameterConversion.Unpack<TArg0>(args, 0),
                     ParameterConversion.Unpack<TArg1>(args, 1),
                     ParameterConversion.Unpack<TArg2>(args, 2), t), entryActionDescription ?? entryAction.TryGetMethodName());

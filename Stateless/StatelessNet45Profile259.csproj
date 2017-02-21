@@ -113,7 +113,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Amp.Logging, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Amp.Logging.1.8.4\lib\portable-net45+win+wpa81+wp80\Amp.Logging.dll</HintPath>
+      <HintPath>..\packages\Amp.Logging.1.8.7\lib\portable-net45+win+wpa81+wp80\Amp.Logging.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Collections.Concurrent">

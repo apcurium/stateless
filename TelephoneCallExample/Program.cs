@@ -119,18 +119,19 @@ namespace TelephoneCallExample
 
             Console.WriteLine("done main");
 
-            var t1 = Task.Factory.StartNew(() =>
-            {
-                Fire(driverStateMachine, Trigger.ToDriving);
-                Fire(driverStateMachine, Trigger.ToInternalDriving);
-                FireWithResult(driverStateMachine, Trigger.ToInnerDriving1);
-                Fire(driverStateMachine, Trigger.ToInnerDriving2);
-                Fire(driverStateMachine, Trigger.ToOffDuty, 2);
-                Fire(driverStateMachine, Trigger.ToSleeperBerth, 3);
-                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 4, 5);
-                Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 5, 7);
-                Fire(driverStateMachine, Trigger.ToDriving, 6);
-            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current);
+            var t1 = Task.Factory.StartNew( () => {
+                Fire( driverStateMachine, Trigger.ToDriving );
+                Fire( driverStateMachine, Trigger.ToInternalDriving );
+                FireWithResult( driverStateMachine, Trigger.ToInnerDriving1 );
+                Fire( driverStateMachine, Trigger.ToInnerDriving2 );
+                Fire( driverStateMachine, Trigger.ToOffDuty, 2 );
+                Fire( driverStateMachine, Trigger.ToSleeperBerth, 3 );
+                Fire( driverStateMachine, Trigger.ToOnDutyNotDriving, 4, 5 );
+                Fire( driverStateMachine, Trigger.ToOnDutyNotDriving, 5, 7 );
+                Fire( driverStateMachine, Trigger.ToDriving, 6 );
+
+            }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Current );
+
 
             var t2 = Task.Run(() =>
             {
@@ -140,7 +141,7 @@ namespace TelephoneCallExample
                 Fire(driverStateMachine, Trigger.ToOnDutyNotDriving, 10, 8);
             });
 
-            Task.WhenAll(t1, t2).Wait();
+            Task.WhenAll(t1, t2);
 
             Console.WriteLine("Press any key...");
             Console.ReadKey(true);
@@ -153,7 +154,7 @@ namespace TelephoneCallExample
 
         }
 
-        static object DrivingOnEntry(object value)
+        static async Task<object> DrivingOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnEntry {value}");
 
@@ -163,13 +164,13 @@ namespace TelephoneCallExample
 
         }
 
-        static object DrivingOnInternal(string value, StateMachine<State, Trigger>.Transition transition)
+        static async Task<object> DrivingOnInternal(string value, StateMachine<State, Trigger>.Transition transition)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal");
             return value;
         }
 
-        static object DrivingOnInternal2(object value, StateMachine<State, Trigger>.Transition transition)
+        static async Task<object> DrivingOnInternal2(object value, StateMachine<State, Trigger>.Transition transition)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnInternal2");
             return "HEEEEEEELLOO";
@@ -180,7 +181,7 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingOnExit");
         }
 
-        static object DrivingInner1OnEntry(object value)
+        static async Task<object> DrivingInner1OnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnEntry {value}");
             return new List<string>() {"teset", "encore"};
@@ -191,7 +192,7 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnExit  {value}");
         }
 
-        static object DrivingInner2OnEntry(object value)
+        static async Task<object> DrivingInner2OnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner2OnEntry {value}");
             return null;
@@ -202,7 +203,7 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} DrivingInner1OnExit  {value}");
         }
 
-        static object OnDutyNotDrivingOnEntry(object value, object value2)
+        static async Task<object> OnDutyNotDrivingOnEntry(object value, object value2)
         {
             Console.WriteLine(
                 $"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnEntry {value} {value2}");
@@ -214,9 +215,12 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OnDutyNotDrivingOnExit");
         }
 
-        static object SleeperBerthgOnEntry(object value)
+        static async Task<object> SleeperBerthgOnEntry(object value)
         {
-            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnEntry {value}");
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnEntry {value} before wait");
+            await Task.Delay( 1000 );
+            Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnEntry {value} after wait");
+
             return null;
         }
 
@@ -225,7 +229,7 @@ namespace TelephoneCallExample
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} SleeperBerthOnExit");
         }
 
-        static object OffDutyOnEntry(object value)
+        static async Task<object> OffDutyOnEntry(object value)
         {
             Console.WriteLine($"{DateTime.Now.ToString("yyyy/MM/dd-hh:mm:ss:fff")} OffDutyOnEntry {value}");
             return null;

@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Stateless
@@ -12,9 +9,9 @@ namespace Stateless
         {
             readonly string _actionDescription;
             readonly TTrigger _trigger;
-            readonly Func<Transition, object[], object> _func;
+            readonly Func<Transition, object[], Task<object>> _func;
 
-            public InternalActionBehavior(Func<Transition, object[], object> func, TTrigger trigger, string actionDescription)
+            public InternalActionBehavior(Func<Transition, object[], Task<object>> func, TTrigger trigger, string actionDescription)
             {
                 _func = func;
                 _trigger = trigger;
@@ -23,7 +20,7 @@ namespace Stateless
 
             internal string ActionDescription { get { return _actionDescription; } }
             internal TTrigger Trigger { get { return _trigger; } }
-            internal Func<Transition, object[], object> Func { get { return _func; } }
+            internal Func<Transition, object[], Task<object>> Func { get { return _func; } }
         }
     }
 }

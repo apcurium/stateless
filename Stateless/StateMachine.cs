@@ -64,7 +64,7 @@ namespace Stateless
         /// <param name="name">name</param>
         public StateMachine(TState initialState, ILogger logger = null, string name = null) : this(logger, name)
         {
-            var reference = new StateReference { State = initialState };
+            StateReference reference = new StateReference { State = initialState };
             _stateAccessor = () => reference.State;
             _stateMutator = s => reference.State = s;
         }
@@ -100,7 +100,7 @@ namespace Stateless
 
             _cancellationTokenSource = new CancellationTokenSource();
 
-            Task.Factory.StartNew(() =>
+            Task.Factory.StartNew(async () =>
             {
                 _logger?.Info($"State machine named [{_stateMachineName}] is started");
                 while (!_cancellationTokenSource.IsCancellationRequested)
@@ -117,7 +117,7 @@ namespace Stateless
                                     _resultManualResetEvent?.Reset();
                                 }
 
-                                ResultFromFire = InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
+                                ResultFromFire = await InternalFireOne(queuedEvent.Trigger, queuedEvent.Args);
                                 OnStateChanged(new StateChangedEventArgs<TState>(State));
 
                                 queuedEvent.ManualResetEvent?.Set();
@@ -367,14 +367,14 @@ namespace Stateless
             }
         }
 
-        FireResult InternalFireOne(TTrigger trigger, params object[] args)
+        private async Task<FireResult> InternalFireOne(TTrigger trigger, params object[] args)
         {
             TriggerWithParameters configuration;
             if (_triggerConfiguration.TryGetValue(trigger, out configuration))
                 configuration.ValidateParameters(args);
 
-            var source = State;
-            var representativeState = GetRepresentation(source);
+            TState source = State;
+            StateRepresentation representativeState = GetRepresentation(source);
 
             TriggerBehaviour triggerBehaviour;
             if (!representativeState.TryFindHandler(trigger, out triggerBehaviour))
@@ -386,26 +386,22 @@ namespace Stateless
             TState destination;
             if (triggerBehaviour.ResultsInTransitionFrom(source, args, out destination))
             {
-                var transition = new Transition(source, destination, trigger);
+                Transition transition = new Transition(source, destination, trigger);
 
                 representativeState.Exit(transition);
 
                 State = transition.Destination;
-                var newRepresentation = GetRepresentation(transition.Destination);
-                var onTransitioned = _onTransitioned;
-                if (onTransitioned != null)
-                    onTransitioned(transition);
+                StateRepresentation newRepresentation = GetRepresentation(transition.Destination);
+                _onTransitioned?.Invoke( transition );
 
-                return newRepresentation.Enter(transition, args);
+                return await newRepresentation.Enter(transition, args);
             }
             else
             {
-                var transition = new Transition(source, destination, trigger);
+                Transition transition = new Transition(source, destination, trigger);
 
-                return CurrentRepresentation.InternalAction(transition, args);
+                return await CurrentRepresentation.InternalAction(transition, args);
             }
-            
-            return null;
         }
 
         /// <summary>
@@ -462,7 +458,7 @@ namespace Stateless
         /// fire the parameterised trigger.</returns>
         public TriggerWithParameters<TArg0> SetTriggerParameters<TArg0>(TTrigger trigger)
         {
-            var configuration = new TriggerWithParameters<TArg0>(trigger);
+            TriggerWithParameters<TArg0> configuration = new TriggerWithParameters<TArg0>(trigger);
             SaveTriggerConfiguration(configuration);
             return configuration;
         }
@@ -477,7 +473,7 @@ namespace Stateless
         /// fire the parameterised trigger.</returns>
         public TriggerWithParameters<TArg0, TArg1> SetTriggerParameters<TArg0, TArg1>(TTrigger trigger)
         {
-            var configuration = new TriggerWithParameters<TArg0, TArg1>(trigger);
+            TriggerWithParameters<TArg0, TArg1> configuration = new TriggerWithParameters<TArg0, TArg1>(trigger);
             SaveTriggerConfiguration(configuration);
             return configuration;
         }
@@ -493,7 +489,7 @@ namespace Stateless
         /// fire the parameterised trigger.</returns>
         public TriggerWithParameters<TArg0, TArg1, TArg2> SetTriggerParameters<TArg0, TArg1, TArg2>(TTrigger trigger)
         {
-            var configuration = new TriggerWithParameters<TArg0, TArg1, TArg2>(trigger);
+            TriggerWithParameters<TArg0, TArg1, TArg2> configuration = new TriggerWithParameters<TArg0, TArg1, TArg2>(trigger);
             SaveTriggerConfiguration(configuration);
             return configuration;
         }
@@ -509,8 +505,8 @@ namespace Stateless
 
         void DefaultUnhandledTriggerAction(TState state, TTrigger trigger)
         {
-            var source = state;
-            var representativeState = GetRepresentation(source);
+            TState source = state;
+            StateRepresentation representativeState = GetRepresentation(source);
 
             TriggerBehaviour triggerBehaviour;
             if (representativeState.TryFindHandlerWithUnmetGuardCondition(trigger, out triggerBehaviour))

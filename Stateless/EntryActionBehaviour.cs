@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.Threading.Tasks;
 
 namespace Stateless
 {
@@ -10,16 +8,16 @@ namespace Stateless
         internal class EntryActionBehavior
         {
             readonly string _actionDescription;
-            readonly Func<Transition, object[], object> _func;
+            readonly Func<Transition, object[], Task<object>> _func;
 
-            public EntryActionBehavior(Func<Transition, object[], object> func, string actionDescription)
+            public EntryActionBehavior(Func<Transition, object[], Task<object>> func, string actionDescription)
             {
                 _func = func;
                 _actionDescription = Enforce.ArgumentNotNull(actionDescription, nameof(actionDescription));
             }
 
             internal string ActionDescription { get { return _actionDescription; } }
-            internal Func<Transition, object[], object> Func { get { return _func; } }
+            internal Func<Transition, object[], Task<object>> Func { get { return _func; } }
         }
     }
 }
