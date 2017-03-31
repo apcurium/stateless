@@ -77,7 +77,14 @@ namespace Stateless
                 _entryAction = new EntryActionBehavior((t, args) =>
                     {
                         if (t.Trigger.Equals(trigger))
-                            return func(t, args);
+                        { 
+                            var result = func(t, args);
+                            if (result.IsFaulted)
+                            {
+                                _logger?.Error($"Function [{entryActionDescription}] is in Faulted state, maybe you mess an async keyword on the function declaration");
+                            }
+                            return result;
+                        }
 
                         return null;
                     },
@@ -106,7 +113,14 @@ namespace Stateless
                 _internalActions.Add(new InternalActionBehavior((t, args) =>
                 {
                     if (t.Trigger.Equals(trigger))
-                        return func(t, args);
+                    { 
+                        var result = func(t, args);
+                        if (result.IsFaulted)
+                        {
+                            _logger?.Error($"Function [{internalActionDescription}] is in Faulted state, maybe you mess an async keyword on the function declaration");
+                        }
+                        return result;
+                    }
 
                     return null;
                 }, 
